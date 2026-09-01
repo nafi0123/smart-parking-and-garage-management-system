@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Smart Parking</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+    .header {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    .content {
+      padding: 30px;
+      color: #333333;
+      line-height: 1.6;
+    }
+    .role-badge {
+      display: inline-block;
+      background-color: #e0e7ff;
+      color: #3730a3;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .otp-card {
+      background: #f0fdf4;
+      border: 2px dashed #10b981;
+      border-radius: 8px;
+      text-align: center;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    .otp-code {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: 8px;
+      color: #047857;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #718096;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚗 Welcome to Smart Parking & Garage System</h1>
+    </div>
+    <div class="content">
+      <h2>Hello <%= name %>,</h2>
+      <p>Congratulations! Your account has been created successfully as <span class="role-badge"><%= role %></span>.</p>
+      
+      <p>Here is your account activation / verification code:</p>
+      <div class="otp-card">
+        <div class="otp-code"><%= otpCode %></div>
+      </div>
+      
+      <p>This code will expire in <strong>5 minutes</strong>. Use it to verify your account.</p>
+      <p>If you have any questions, feel free to contact our support team.</p>
+    </div>
+    <div class="footer">
+      &copy; <%= new Date().getFullYear() %> Smart Parking & Garage Management System. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>

@@ -16,7 +16,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 
 const blockUser = catchAsync(async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const result = await UserService.blockUser(userId);
+  const result = await UserService.blockUser(userId as string);
 
   sendResponse(res, {
     statusCode: 200,

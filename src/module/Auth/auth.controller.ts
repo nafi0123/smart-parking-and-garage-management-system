@@ -25,6 +25,18 @@ const login = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const verifyOtp = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.verifyOtp(req.body);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'OTP verified successfully',
+    data: result,
+  });
+});
+
 export const AuthController = {
   login,
+  verifyOtp,
 };

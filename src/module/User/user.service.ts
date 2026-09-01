@@ -1,5 +1,7 @@
 import bcrypt from 'bcrypt';
 import prisma from '../../app/utils/prisma';
+import redisClient from '../../app/config/redis';
+import { sendWelcomeOtpEmail } from '../../app/utils/sendEmail';
 import AppError from '../../app/errors/AppError';
 import { IRegisterUser } from './user.interface';
 
@@ -26,9 +28,28 @@ const createUser = async (payload: IRegisterUser) => {
       name: true,
       email: true,
       role: true,
+      isVerified: true,
       createdAt: true,
     },
   });
+
+  // Generate OTP code
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Save OTP in Redis with 5 minutes (300s) TTL
+  await redisClient.set(`otp:${payload.email}`, otpCode, 'EX', 300);
+
+  // Send Email with EJS template via Resend automatically on user creation
+  try {
+    await sendWelcomeOtpEmail({
+      to: payload.email,
+      name: payload.name,
+      role: payload.role,
+      otpCode,
+    });
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+  }
 
   return user;
 };

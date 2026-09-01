@@ -25,7 +25,7 @@ const auth = (...requiredRoles: string[]) => {
 
     const { userId, role } = decoded;
 
-    // Check if user exists and is active (not blocked)
+    // Check if user exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -34,8 +34,14 @@ const auth = (...requiredRoles: string[]) => {
       throw new AppError(404, 'User not found!');
     }
 
+    // Check if user is blocked
     if (!user.isActive) {
       throw new AppError(403, 'Your account has been blocked!');
+    }
+
+    // Check if user account is verified
+    if (!user.isVerified) {
+      throw new AppError(403, 'Please verify your account first!');
     }
 
     // Check role authorization

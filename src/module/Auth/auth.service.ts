@@ -1,8 +1,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import prisma from '../../app/utils/prisma';
+import redisClient from '../../app/config/redis';
 import AppError from '../../app/errors/AppError';
-import { ILoginUser } from './auth.interface';
+import { ILoginUser, IVerifyOtp } from './auth.interface';
 
 const login = async (payload: ILoginUser) => {
   const user = await prisma.user.findUnique({
@@ -32,13 +33,13 @@ const login = async (payload: ILoginUser) => {
   const accessToken = jwt.sign(
     jwtPayload,
     process.env.JWT_ACCESS_SECRET as string,
-    { expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m' },
+    { expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as any },
   );
 
   const refreshToken = jwt.sign(
     jwtPayload,
     process.env.JWT_REFRESH_SECRET as string,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '30d' },
+    { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any },
   );
 
   return {
@@ -49,10 +50,45 @@ const login = async (payload: ILoginUser) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      isVerified: user.isVerified,
     },
+  };
+};
+
+const verifyOtp = async (payload: IVerifyOtp) => {
+  const cachedOtp = await redisClient.get(`otp:${payload.email}`);
+
+  if (!cachedOtp) {
+    throw new AppError(400, 'OTP code has expired or does not exist');
+  }
+
+  if (cachedOtp !== payload.otpCode) {
+    throw new AppError(400, 'Invalid OTP code');
+  }
+
+  // Update isVerified to true in Database
+  const updatedUser = await prisma.user.update({
+    where: { email: payload.email },
+    data: { isVerified: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      isVerified: true,
+    },
+  });
+
+  // Clear OTP from Redis after verification
+  await redisClient.del(`otp:${payload.email}`);
+
+  return {
+    user: updatedUser,
+    verified: true,
   };
 };
 
 export const AuthService = {
   login,
+  verifyOtp,
 };

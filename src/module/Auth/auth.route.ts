@@ -11,4 +11,10 @@ router.post(
   AuthController.login,
 );
 
+router.post(
+  '/verify-otp',
+  validateRequest(AuthValidation.verifyOtpValidationSchema),
+  AuthController.verifyOtp,
+);
+
 export const AuthRoutes = router;
