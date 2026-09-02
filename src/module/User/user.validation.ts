@@ -6,12 +6,13 @@ const registerValidationSchema = z.object({
     email: z
       .string({ required_error: 'Email is required' })
       .email('Invalid email address'),
+    phone: z.string().optional(),
     password: z
       .string({ required_error: 'Password is required' })
       .min(6, 'Password must be at least 6 characters'),
-    role: z.enum(['DRIVER', 'MANAGER'], {
+    role: z.enum(['DRIVER', 'MANAGER', 'ADMIN'], {
       required_error: 'Role is required',
-      invalid_type_error: 'Role must be DRIVER or MANAGER',
+      invalid_type_error: 'Role must be DRIVER, MANAGER, or ADMIN',
     }),
   }),
 });

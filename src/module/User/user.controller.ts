@@ -14,6 +14,18 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.getAllUsers(req.query);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Users retrieved successfully',
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 const blockUser = catchAsync(async (req: Request, res: Response) => {
   const { userId } = req.params;
   const result = await UserService.blockUser(userId as string);
@@ -30,5 +42,6 @@ const blockUser = catchAsync(async (req: Request, res: Response) => {
 
 export const UserController = {
   createUser,
+  getAllUsers,
   blockUser,
 };

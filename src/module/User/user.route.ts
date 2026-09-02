@@ -12,6 +12,13 @@ router.post(
   UserController.createUser,
 );
 
+// Admin only - get all users with search, role filter, pagination
+router.get(
+  '/',
+  auth('ADMIN'),
+  UserController.getAllUsers,
+);
+
 // Admin only - block/unblock a user
 router.patch(
   '/block/:userId',

@@ -1,9 +1,10 @@
 import bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
 import prisma from '../../app/utils/prisma';
 import redisClient from '../../app/config/redis';
 import { sendWelcomeOtpEmail } from '../../app/utils/sendEmail';
 import AppError from '../../app/errors/AppError';
-import { IRegisterUser } from './user.interface';
+import { IRegisterUser, IUserQueryFilter } from './user.interface';
 
 const createUser = async (payload: IRegisterUser) => {
   const existingUser = await prisma.user.findUnique({
@@ -20,6 +21,7 @@ const createUser = async (payload: IRegisterUser) => {
     data: {
       name: payload.name,
       email: payload.email,
+      phone: payload.phone,
       password: hashedPassword,
       role: payload.role,
     },
@@ -27,6 +29,7 @@ const createUser = async (payload: IRegisterUser) => {
       id: true,
       name: true,
       email: true,
+      phone: true,
       role: true,
       isVerified: true,
       createdAt: true,
@@ -54,6 +57,68 @@ const createUser = async (payload: IRegisterUser) => {
   return user;
 };
 
+const getAllUsers = async (query: IUserQueryFilter) => {
+  const { searchTerm, role, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+
+  const pageNum = Number(page) || 1;
+  const limitNum = Number(limit) || 10;
+  const skip = (pageNum - 1) * limitNum;
+
+  const whereConditions: Prisma.UserWhereInput[] = [];
+
+  if (searchTerm) {
+    whereConditions.push({
+      OR: [
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { email: { contains: searchTerm, mode: 'insensitive' } },
+        { phone: { contains: searchTerm, mode: 'insensitive' } },
+      ],
+    });
+  }
+
+  if (role) {
+    whereConditions.push({
+      role: role,
+    });
+  }
+
+  const where: Prisma.UserWhereInput =
+    whereConditions.length > 0 ? { AND: whereConditions } : {};
+
+  const users = await prisma.user.findMany({
+    where,
+    skip,
+    take: limitNum,
+    orderBy: {
+      [sortBy]: sortOrder,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      isActive: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const total = await prisma.user.count({ where });
+  const totalPage = Math.ceil(total / limitNum);
+
+  return {
+    meta: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPage,
+    },
+    data: users,
+  };
+};
+
 const blockUser = async (userId: string) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -74,6 +139,7 @@ const blockUser = async (userId: string) => {
       id: true,
       name: true,
       email: true,
+      phone: true,
       role: true,
       isActive: true,
     },
@@ -84,5 +150,6 @@ const blockUser = async (userId: string) => {
 
 export const UserService = {
   createUser,
+  getAllUsers,
   blockUser,
 };

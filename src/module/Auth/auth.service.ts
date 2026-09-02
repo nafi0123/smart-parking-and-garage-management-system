@@ -24,6 +24,10 @@ const login = async (payload: ILoginUser) => {
     throw new AppError(401, 'Incorrect password');
   }
 
+  if (!user.isVerified) {
+    throw new AppError(403, 'Please verify your account first');
+  }
+
   const jwtPayload = {
     userId: user.id,
     email: user.email,
