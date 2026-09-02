@@ -1,8 +1,6 @@
 import path from 'path';
 import ejs from 'ejs';
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY as string);
+import nodemailer from 'nodemailer';
 
 interface ISendWelcomeOtpEmail {
   to: string;
@@ -17,6 +15,14 @@ export const sendWelcomeOtpEmail = async ({
   role,
   otpCode,
 }: ISendWelcomeOtpEmail) => {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: (process.env.SMTP_PASS || '').replace(/\s+/g, ''),
+    },
+  });
+
   const templatePath = path.join(__dirname, '../views/userWelcomeTemplate.ejs');
 
   const html = await ejs.renderFile(templatePath, {
@@ -25,12 +31,15 @@ export const sendWelcomeOtpEmail = async ({
     otpCode,
   });
 
-  const response = await resend.emails.send({
-    from: `Smart Parking <${process.env.SENDER_EMAIL || 'onboarding@resend.dev'}>`,
-    to: [to],
+  const mailOptions = {
+    from: `Smart Parking <${process.env.SENDER_EMAIL || process.env.SMTP_USER}>`,
+    to,
     subject: 'Welcome to Smart Parking - Your Verification Code',
     html,
-  });
+  };
+
+  const response = await transporter.sendMail(mailOptions);
+  console.log(`📧 Verification email sent successfully to ${to} (MessageID: ${response.messageId})`);
 
   return response;
 };
