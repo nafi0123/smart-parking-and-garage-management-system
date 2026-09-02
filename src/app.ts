@@ -5,6 +5,7 @@ import globalErrorHandler from './app/errors/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
 import { UserRoutes } from './module/User/user.route';
 import { AuthRoutes } from './module/Auth/auth.route';
+import { GarageRoutes } from './module/Garage/garage.route';
 
 const app: Application = express();
 
@@ -15,6 +16,7 @@ app.use(cors());
 // Application routes
 app.use('/api/v1/users', UserRoutes);
 app.use('/api/v1/auth', AuthRoutes);
+app.use('/api/v1/garages', GarageRoutes);
 
 // Health check
 app.get('/', (req: Request, res: Response) => {

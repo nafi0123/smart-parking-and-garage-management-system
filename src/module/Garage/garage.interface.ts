@@ -1,0 +1,27 @@
+export interface ICreateGarage {
+  name: string;
+  address: string;
+  description?: string;
+  totalSlots?: number;
+  availableSlots?: number;
+  pricePerHour?: number;
+  location?: string;
+}
+
+export interface IUpdateGarage {
+  name?: string;
+  address?: string;
+  description?: string;
+  totalSlots?: number;
+  availableSlots?: number;
+  pricePerHour?: number;
+  location?: string;
+}
+
+export interface IGarageQueryFilter {
+  searchTerm?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
