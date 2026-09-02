@@ -41,7 +41,7 @@ const createGarage = async (ownerId: string, payload: ICreateGarage) => {
 };
 
 const getAllGarages = async (query: IGarageQueryFilter) => {
-  const { searchTerm, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+  const { searchTerm, minPrice, maxPrice, onlyAvailable, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
 
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || 10;
@@ -56,6 +56,24 @@ const getAllGarages = async (query: IGarageQueryFilter) => {
         { address: { contains: searchTerm, mode: 'insensitive' } },
         { location: { contains: searchTerm, mode: 'insensitive' } },
       ],
+    });
+  }
+
+  if (minPrice !== undefined) {
+    whereConditions.push({
+      pricePerHour: { gte: Number(minPrice) },
+    });
+  }
+
+  if (maxPrice !== undefined) {
+    whereConditions.push({
+      pricePerHour: { lte: Number(maxPrice) },
+    });
+  }
+
+  if (onlyAvailable === true || onlyAvailable === 'true') {
+    whereConditions.push({
+      availableSlots: { gt: 0 },
     });
   }
 

@@ -6,6 +6,7 @@ import notFound from './app/middlewares/notFound';
 import { UserRoutes } from './module/User/user.route';
 import { AuthRoutes } from './module/Auth/auth.route';
 import { GarageRoutes } from './module/Garage/garage.route';
+import { BookingRoutes } from './module/Booking/booking.route';
 
 const app: Application = express();
 
@@ -17,6 +18,7 @@ app.use(cors());
 app.use('/api/v1/users', UserRoutes);
 app.use('/api/v1/auth', AuthRoutes);
 app.use('/api/v1/garages', GarageRoutes);
+app.use('/api/v1/bookings', BookingRoutes);
 
 // Health check
 app.get('/', (req: Request, res: Response) => {

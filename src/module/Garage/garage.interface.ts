@@ -20,6 +20,9 @@ export interface IUpdateGarage {
 
 export interface IGarageQueryFilter {
   searchTerm?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  onlyAvailable?: boolean | string;
   page?: number;
   limit?: number;
   sortBy?: string;

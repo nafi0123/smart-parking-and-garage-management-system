@@ -50,15 +50,24 @@ model Garage {
   @@map("garages")
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
 model Booking {
-  id        String   @id @default(uuid())
-  userId    String
-  garageId  String
-  startTime DateTime
-  endTime   DateTime
-  status    String   @default("PENDING")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String        @id @default(uuid())
+  userId        String
+  garageId      String
+  startTime     DateTime
+  endTime       DateTime
+  vehicleNumber String?
+  totalPrice    Float         @default(0)
+  status        BookingStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   user   User   @relation(fields: [userId], references: [id])
   garage Garage @relation(fields: [garageId], references: [id])
