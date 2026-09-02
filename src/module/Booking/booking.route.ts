@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { BookingController } from './booking.controller';
-import validateRequest from '../../app/middlewares/validateRequest';
-import { BookingValidation } from './booking.validation';
 import auth from '../../app/middlewares/auth';
+import validateRequest from '../../app/middlewares/validateRequest';
+import { BookingController } from './booking.controller';
+import { BookingValidation } from './booking.validation';
 
 const router = Router();
 
@@ -15,39 +15,19 @@ router.post(
 );
 
 // Get bookings created by logged in user (Driver view)
-router.get(
-  '/my-bookings',
-  auth('DRIVER', 'MANAGER', 'ADMIN'),
-  BookingController.getMyBookings,
-);
+router.get('/my-bookings', auth('DRIVER', 'MANAGER', 'ADMIN'), BookingController.getMyBookings);
 
 // Get bookings for garages owned by logged in manager (Manager view)
-router.get(
-  '/manager-bookings',
-  auth('MANAGER', 'ADMIN'),
-  BookingController.getManagerBookings,
-);
+router.get('/manager-bookings', auth('MANAGER', 'ADMIN'), BookingController.getManagerBookings);
 
 // Get all bookings (Admin only)
-router.get(
-  '/',
-  auth('ADMIN'),
-  BookingController.getAllBookings,
-);
+router.get('/', auth('ADMIN'), BookingController.getAllBookings);
 
 // Get single booking details
-router.get(
-  '/:id',
-  auth('DRIVER', 'MANAGER', 'ADMIN'),
-  BookingController.getSingleBooking,
-);
+router.get('/:id', auth('DRIVER', 'MANAGER', 'ADMIN'), BookingController.getSingleBooking);
 
 // Cancel a booking
-router.patch(
-  '/:id/cancel',
-  auth('DRIVER', 'MANAGER', 'ADMIN'),
-  BookingController.cancelBooking,
-);
+router.patch('/:id/cancel', auth('DRIVER', 'MANAGER', 'ADMIN'), BookingController.cancelBooking);
 
 // Update booking status (Manager/Admin)
 router.patch(

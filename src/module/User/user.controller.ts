@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import catchAsync from '../../app/utils/catchAsync';
 import sendResponse from '../../app/utils/sendResponse';
 import { UserService } from './user.service';
@@ -33,9 +33,7 @@ const blockUser = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: 200,
     success: true,
-    message: result.isActive
-      ? 'User unblocked successfully'
-      : 'User blocked successfully',
+    message: result.isActive ? 'User unblocked successfully' : 'User blocked successfully',
     data: result,
   });
 });

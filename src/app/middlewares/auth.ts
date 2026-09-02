@@ -1,11 +1,11 @@
-import { NextFunction, Request, Response } from 'express';
-import jwt, { JwtPayload } from 'jsonwebtoken';
-import prisma from '../utils/prisma';
+import type { NextFunction, Request, Response } from 'express';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 import AppError from '../errors/AppError';
 import catchAsync from '../utils/catchAsync';
+import prisma from '../utils/prisma';
 
 const auth = (...requiredRoles: string[]) => {
-  return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  return catchAsync(async (req: Request, _res: Response, next: NextFunction) => {
     let token = req.headers.authorization;
 
     if (!token) {
@@ -20,11 +20,8 @@ const auth = (...requiredRoles: string[]) => {
     let decoded: JwtPayload;
 
     try {
-      decoded = jwt.verify(
-        token,
-        process.env.JWT_ACCESS_SECRET as string,
-      ) as JwtPayload;
-    } catch (err) {
+      decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as JwtPayload;
+    } catch (_err) {
       throw new AppError(401, 'Token is invalid or expired!');
     }
 

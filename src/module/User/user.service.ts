@@ -1,10 +1,10 @@
+import type { Prisma } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { Prisma } from '@prisma/client';
-import prisma from '../../app/utils/prisma';
 import redisClient from '../../app/config/redis';
-import { sendWelcomeOtpEmail } from '../../app/utils/sendEmail';
 import AppError from '../../app/errors/AppError';
-import { IRegisterUser, IUserQueryFilter } from './user.interface';
+import prisma from '../../app/utils/prisma';
+import { sendWelcomeOtpEmail } from '../../app/utils/sendEmail';
+import type { IRegisterUser, IUserQueryFilter } from './user.interface';
 
 const createUser = async (payload: IRegisterUser) => {
   const existingUser = await prisma.user.findUnique({
@@ -58,7 +58,14 @@ const createUser = async (payload: IRegisterUser) => {
 };
 
 const getAllUsers = async (query: IUserQueryFilter) => {
-  const { searchTerm, role, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+  const {
+    searchTerm,
+    role,
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+  } = query;
 
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || 10;
@@ -82,8 +89,7 @@ const getAllUsers = async (query: IUserQueryFilter) => {
     });
   }
 
-  const where: Prisma.UserWhereInput =
-    whereConditions.length > 0 ? { AND: whereConditions } : {};
+  const where: Prisma.UserWhereInput = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
   const users = await prisma.user.findMany({
     where,

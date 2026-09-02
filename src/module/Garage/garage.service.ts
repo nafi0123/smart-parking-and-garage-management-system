@@ -1,7 +1,7 @@
-import { Prisma } from '@prisma/client';
-import prisma from '../../app/utils/prisma';
+import type { Prisma } from '@prisma/client';
 import AppError from '../../app/errors/AppError';
-import { ICreateGarage, IGarageQueryFilter, IUpdateGarage } from './garage.interface';
+import prisma from '../../app/utils/prisma';
+import type { ICreateGarage, IGarageQueryFilter, IUpdateGarage } from './garage.interface';
 
 const createGarage = async (ownerId: string, payload: ICreateGarage) => {
   // Check if owner exists
@@ -19,7 +19,8 @@ const createGarage = async (ownerId: string, payload: ICreateGarage) => {
       address: payload.address,
       description: payload.description,
       totalSlots: payload.totalSlots || 1,
-      availableSlots: payload.availableSlots !== undefined ? payload.availableSlots : (payload.totalSlots || 1),
+      availableSlots:
+        payload.availableSlots !== undefined ? payload.availableSlots : payload.totalSlots || 1,
       pricePerHour: payload.pricePerHour || 0,
       location: payload.location,
       ownerId,
@@ -41,7 +42,16 @@ const createGarage = async (ownerId: string, payload: ICreateGarage) => {
 };
 
 const getAllGarages = async (query: IGarageQueryFilter) => {
-  const { searchTerm, minPrice, maxPrice, onlyAvailable, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+  const {
+    searchTerm,
+    minPrice,
+    maxPrice,
+    onlyAvailable,
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+  } = query;
 
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || 10;
@@ -77,8 +87,7 @@ const getAllGarages = async (query: IGarageQueryFilter) => {
     });
   }
 
-  const where: Prisma.GarageWhereInput =
-    whereConditions.length > 0 ? { AND: whereConditions } : {};
+  const where: Prisma.GarageWhereInput = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
   const garages = await prisma.garage.findMany({
     where,
@@ -144,7 +153,12 @@ const getSingleGarage = async (garageId: string) => {
   return garage;
 };
 
-const updateGarage = async (garageId: string, userId: string, userRole: string, payload: IUpdateGarage) => {
+const updateGarage = async (
+  garageId: string,
+  userId: string,
+  userRole: string,
+  payload: IUpdateGarage,
+) => {
   const garage = await prisma.garage.findUnique({
     where: { id: garageId },
   });

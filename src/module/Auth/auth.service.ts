@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import prisma from '../../app/utils/prisma';
 import redisClient from '../../app/config/redis';
 import AppError from '../../app/errors/AppError';
-import { ILoginUser, IVerifyOtp } from './auth.interface';
+import prisma from '../../app/utils/prisma';
+import type { ILoginUser, IVerifyOtp } from './auth.interface';
 
 const login = async (payload: ILoginUser) => {
   const user = await prisma.user.findUnique({
@@ -34,17 +34,13 @@ const login = async (payload: ILoginUser) => {
     role: user.role,
   };
 
-  const accessToken = jwt.sign(
-    jwtPayload,
-    process.env.JWT_ACCESS_SECRET as string,
-    { expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as any },
-  );
+  const accessToken = jwt.sign(jwtPayload, process.env.JWT_ACCESS_SECRET as string, {
+    expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '15m') as any,
+  });
 
-  const refreshToken = jwt.sign(
-    jwtPayload,
-    process.env.JWT_REFRESH_SECRET as string,
-    { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any },
-  );
+  const refreshToken = jwt.sign(jwtPayload, process.env.JWT_REFRESH_SECRET as string, {
+    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN || '30d') as any,
+  });
 
   return {
     accessToken,

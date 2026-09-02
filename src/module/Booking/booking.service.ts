@@ -1,7 +1,11 @@
-import { BookingStatus, Prisma } from '@prisma/client';
-import prisma from '../../app/utils/prisma';
+import { BookingStatus, type Prisma } from '@prisma/client';
 import AppError from '../../app/errors/AppError';
-import { IBookingQueryFilter, ICreateBooking, IUpdateBookingStatus } from './booking.interface';
+import prisma from '../../app/utils/prisma';
+import type {
+  IBookingQueryFilter,
+  ICreateBooking,
+  IUpdateBookingStatus,
+} from './booking.interface';
 
 const createBooking = async (userId: string, payload: ICreateBooking) => {
   // Check if garage exists
@@ -21,7 +25,7 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   const start = new Date(payload.startTime);
   const end = new Date(payload.endTime);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     throw new AppError(400, 'Invalid startTime or endTime format!');
   }
 
@@ -228,11 +232,7 @@ const getSingleBooking = async (bookingId: string, userId: string, userRole: str
   }
 
   // Authorization check
-  if (
-    booking.userId !== userId &&
-    booking.garage.ownerId !== userId &&
-    userRole !== 'ADMIN'
-  ) {
+  if (booking.userId !== userId && booking.garage.ownerId !== userId && userRole !== 'ADMIN') {
     throw new AppError(403, 'You are not authorized to view this booking!');
   }
 
@@ -250,11 +250,7 @@ const cancelBooking = async (bookingId: string, userId: string, userRole: string
   }
 
   // Authorization check (Booking user, Garage owner, or Admin)
-  if (
-    booking.userId !== userId &&
-    booking.garage.ownerId !== userId &&
-    userRole !== 'ADMIN'
-  ) {
+  if (booking.userId !== userId && booking.garage.ownerId !== userId && userRole !== 'ADMIN') {
     throw new AppError(403, 'You are not authorized to cancel this booking!');
   }
 

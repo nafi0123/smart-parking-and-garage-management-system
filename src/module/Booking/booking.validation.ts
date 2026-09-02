@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { BookingStatus } from '@prisma/client';
+import { z } from 'zod';
 
 const createBookingValidationSchema = z.object({
   body: z.object({

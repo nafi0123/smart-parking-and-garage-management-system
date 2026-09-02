@@ -1,8 +1,8 @@
-import { ErrorRequestHandler } from 'express';
+import type { ErrorRequestHandler } from 'express';
 import { ZodError } from 'zod';
 import AppError from './AppError';
 
-const globalErrorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+const globalErrorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   let statusCode = 500;
   let message = 'Something went wrong!';
   let errorSources: { path: string | number; message: string }[] = [

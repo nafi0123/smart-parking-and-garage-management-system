@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 import ejs from 'ejs';
 import nodemailer from 'nodemailer';
 
@@ -9,12 +9,7 @@ interface ISendWelcomeOtpEmail {
   otpCode: string;
 }
 
-export const sendWelcomeOtpEmail = async ({
-  to,
-  name,
-  role,
-  otpCode,
-}: ISendWelcomeOtpEmail) => {
+export const sendWelcomeOtpEmail = async ({ to, name, role, otpCode }: ISendWelcomeOtpEmail) => {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -39,7 +34,9 @@ export const sendWelcomeOtpEmail = async ({
   };
 
   const response = await transporter.sendMail(mailOptions);
-  console.log(`📧 Verification email sent successfully to ${to} (MessageID: ${response.messageId})`);
+  console.log(
+    `📧 Verification email sent successfully to ${to} (MessageID: ${response.messageId})`,
+  );
 
   return response;
 };

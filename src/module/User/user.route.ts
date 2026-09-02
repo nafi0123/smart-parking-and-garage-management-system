@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { UserController } from './user.controller';
-import validateRequest from '../../app/middlewares/validateRequest';
-import { UserValidation } from './user.validation';
 import auth from '../../app/middlewares/auth';
+import validateRequest from '../../app/middlewares/validateRequest';
+import { UserController } from './user.controller';
+import { UserValidation } from './user.validation';
 
 const router = Router();
 
@@ -13,17 +13,9 @@ router.post(
 );
 
 // Admin only - get all users with search, role filter, pagination
-router.get(
-  '/',
-  auth('ADMIN'),
-  UserController.getAllUsers,
-);
+router.get('/', auth('ADMIN'), UserController.getAllUsers);
 
 // Admin only - block/unblock a user
-router.patch(
-  '/block/:userId',
-  auth('ADMIN'),
-  UserController.blockUser,
-);
+router.patch('/block/:userId', auth('ADMIN'), UserController.blockUser);
 
 export const UserRoutes = router;
