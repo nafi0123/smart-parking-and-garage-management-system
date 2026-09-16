@@ -369,10 +369,87 @@ const refundBookingPayment = async (
   return result;
 };
 
+const getPaymentDetails = async (identifier: string, userId: string, userRole: string) => {
+  const payment = await prisma.payment.findFirst({
+    where: {
+      OR: [{ id: identifier }, { transactionId: identifier }, { bookingId: identifier }],
+    },
+    include: {
+      booking: {
+        include: {
+          garage: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              location: true,
+              pricePerHour: true,
+              ownerId: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!payment) {
+    throw new AppError(404, 'Payment details not found!');
+  }
+
+  // Authorization: Booking user, Garage owner, or Admin
+  if (
+    payment.userId !== userId &&
+    payment.booking.garage.ownerId !== userId &&
+    userRole !== 'ADMIN'
+  ) {
+    throw new AppError(403, 'You are not authorized to view this payment details!');
+  }
+
+  return payment;
+};
+
+const getMyPayments = async (userId: string) => {
+  const payments = await prisma.payment.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      booking: {
+        select: {
+          id: true,
+          startTime: true,
+          endTime: true,
+          vehicleNumber: true,
+          status: true,
+          garage: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              location: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return payments;
+};
+
 export const PaymentService = {
   confirmPayment,
   failPayment,
   cancelPayment,
   initiatePaymentForBooking,
   refundBookingPayment,
+  getPaymentDetails,
+  getMyPayments,
 };

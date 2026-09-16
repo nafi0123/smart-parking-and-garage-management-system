@@ -250,10 +250,39 @@ const refundPayment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getPaymentDetails = catchAsync(async (req: Request, res: Response) => {
+  const { identifier } = req.params;
+  const { userId, role } = (req as any).user;
+
+  const result = await PaymentService.getPaymentDetails(identifier as string, userId, role);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Payment details retrieved successfully',
+    data: result,
+  });
+});
+
+const getMyPayments = catchAsync(async (req: Request, res: Response) => {
+  const { userId } = (req as any).user;
+
+  const result = await PaymentService.getMyPayments(userId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'My payments retrieved successfully',
+    data: result,
+  });
+});
+
 export const PaymentController = {
   confirmPayment,
   failPayment,
   cancelPayment,
   initiatePayment,
   refundPayment,
+  getPaymentDetails,
+  getMyPayments,
 };

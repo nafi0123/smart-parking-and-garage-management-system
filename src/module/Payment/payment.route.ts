@@ -23,4 +23,10 @@ router.post(
   PaymentController.refundPayment,
 );
 
+// Get all payments for logged-in user
+router.get('/my-payments', auth('DRIVER', 'MANAGER', 'ADMIN'), PaymentController.getMyPayments);
+
+// Get single payment details (by payment id, transactionId, or bookingId)
+router.get('/:identifier', auth('DRIVER', 'MANAGER', 'ADMIN'), PaymentController.getPaymentDetails);
+
 export const PaymentRoutes = router;
