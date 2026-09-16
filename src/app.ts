@@ -6,11 +6,13 @@ import notFound from './app/middlewares/notFound';
 import { AuthRoutes } from './module/Auth/auth.route';
 import { BookingRoutes } from './module/Booking/booking.route';
 import { GarageRoutes } from './module/Garage/garage.route';
+import { PaymentRoutes } from './module/Payment/payment.route';
 import { UserRoutes } from './module/User/user.route';
 
 const app: Application = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors());
 
@@ -19,6 +21,7 @@ app.use('/api/v1/users', UserRoutes);
 app.use('/api/v1/auth', AuthRoutes);
 app.use('/api/v1/garages', GarageRoutes);
 app.use('/api/v1/bookings', BookingRoutes);
+app.use('/api/v1/payments', PaymentRoutes);
 
 // Health check
 app.get('/', (_req: Request, res: Response) => {

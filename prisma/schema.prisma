@@ -27,6 +27,7 @@ model User {
 
   garages  Garage[]
   bookings Booking[]
+  payments Payment[]
 
   @@map("users")
 }
@@ -69,8 +70,33 @@ model Booking {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id])
-  garage Garage @relation(fields: [garageId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  garage  Garage   @relation(fields: [garageId], references: [id])
+  payment Payment?
 
   @@map("bookings")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+model Payment {
+  id                 String        @id @default(uuid())
+  bookingId          String        @unique
+  userId             String
+  amount             Float
+  transactionId      String        @unique
+  status             PaymentStatus @default(PENDING)
+  paymentGatewayData Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("payments")
 }

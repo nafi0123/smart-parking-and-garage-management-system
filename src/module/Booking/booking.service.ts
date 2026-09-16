@@ -1,6 +1,7 @@
-import { BookingStatus, type Prisma } from '@prisma/client';
+import { BookingStatus, PaymentStatus, type Prisma } from '@prisma/client';
 import AppError from '../../app/errors/AppError';
 import prisma from '../../app/utils/prisma';
+import { SSLCommerzService } from '../Payment/sslcommerz.service';
 import type {
   IBookingQueryFilter,
   ICreateBooking,
@@ -37,8 +38,19 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   const durationInHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
   const totalPrice = Number((durationInHours * garage.pricePerHour).toFixed(2));
 
-  // Perform transaction: Create booking & Decrement available slots
-  const result = await prisma.$transaction(async (tx) => {
+  // Get user details for SSLCommerz payment
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new AppError(404, 'User not found!');
+  }
+
+  const transactionId = `TRX-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // Create booking & payment record. Available slots will decrement only AFTER payment confirmation!
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const booking = await tx.booking.create({
       data: {
         userId,
@@ -70,20 +82,41 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
       },
     });
 
-    // Decrement available slots in garage
-    await tx.garage.update({
-      where: { id: payload.garageId },
+    const payment = await tx.payment.create({
       data: {
-        availableSlots: {
-          decrement: 1,
-        },
+        bookingId: booking.id,
+        userId,
+        amount: totalPrice,
+        transactionId,
+        status: PaymentStatus.PENDING,
       },
     });
 
-    return booking;
+    return { booking, payment };
   });
 
-  return result;
+  // Request SSLCommerz payment checkout URL
+  let paymentUrl: string | null = null;
+  try {
+    paymentUrl = await SSLCommerzService.initPayment({
+      amount: totalPrice,
+      transactionId,
+      customerName: user.name,
+      customerEmail: user.email,
+      customerPhone: user.phone,
+      customerAddress: garage.address,
+      productName: `Parking at ${garage.name}`,
+    });
+  } catch (error: any) {
+    console.error('SSLCommerz session initialization error:', error.message);
+  }
+
+  return {
+    ...result.booking,
+    payment: result.payment,
+    paymentUrl,
+    transactionId,
+  };
 };
 
 const getMyBookings = async (userId: string) => {
@@ -91,6 +124,7 @@ const getMyBookings = async (userId: string) => {
     where: { userId },
     orderBy: { createdAt: 'desc' },
     include: {
+      payment: true,
       garage: {
         select: {
           id: true,
@@ -123,6 +157,7 @@ const getManagerBookings = async (managerId: string) => {
     },
     orderBy: { createdAt: 'desc' },
     include: {
+      payment: true,
       garage: {
         select: {
           id: true,
@@ -168,6 +203,7 @@ const getAllBookings = async (query: IBookingQueryFilter) => {
       [sortBy]: sortOrder,
     },
     include: {
+      payment: true,
       garage: {
         select: {
           id: true,
@@ -204,6 +240,7 @@ const getSingleBooking = async (bookingId: string, userId: string, userRole: str
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
+      payment: true,
       garage: {
         include: {
           owner: {
@@ -262,21 +299,25 @@ const cancelBooking = async (bookingId: string, userId: string, userRole: string
     throw new AppError(400, 'Cannot cancel a completed booking!');
   }
 
-  // Transaction: Cancel booking & Increment available slots
-  const result = await prisma.$transaction(async (tx) => {
+  const wasConfirmed = booking.status === BookingStatus.CONFIRMED;
+
+  // Transaction: Cancel booking & increment slots ONLY if it was previously confirmed (paid)
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updatedBooking = await tx.booking.update({
       where: { id: bookingId },
       data: { status: BookingStatus.CANCELLED },
     });
 
-    await tx.garage.update({
-      where: { id: booking.garageId },
-      data: {
-        availableSlots: {
-          increment: 1,
+    if (wasConfirmed) {
+      await tx.garage.update({
+        where: { id: booking.garageId },
+        data: {
+          availableSlots: {
+            increment: 1,
+          },
         },
-      },
-    });
+      });
+    }
 
     return updatedBooking;
   });
@@ -307,16 +348,31 @@ const updateBookingStatus = async (
   const oldStatus = booking.status;
   const newStatus = payload.status;
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updatedBooking = await tx.booking.update({
       where: { id: bookingId },
       data: { status: newStatus },
     });
 
-    // If changing to CANCELLED or COMPLETED from active state, release slot back
+    // If changing to CONFIRMED from PENDING, decrement available slot
+    if (oldStatus === BookingStatus.PENDING && newStatus === BookingStatus.CONFIRMED) {
+      if (booking.garage.availableSlots <= 0) {
+        throw new AppError(400, 'No available parking slots remaining in this garage!');
+      }
+      await tx.garage.update({
+        where: { id: booking.garageId },
+        data: {
+          availableSlots: {
+            decrement: 1,
+          },
+        },
+      });
+    }
+
+    // If changing to CANCELLED or COMPLETED from CONFIRMED state, release slot back
     if (
       (newStatus === BookingStatus.CANCELLED || newStatus === BookingStatus.COMPLETED) &&
-      (oldStatus === BookingStatus.PENDING || oldStatus === BookingStatus.CONFIRMED)
+      oldStatus === BookingStatus.CONFIRMED
     ) {
       await tx.garage.update({
         where: { id: booking.garageId },
