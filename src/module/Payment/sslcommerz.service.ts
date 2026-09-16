@@ -97,7 +97,46 @@ const validatePayment = async (val_id: string) => {
   return result;
 };
 
+const initiateRefund = async (params: {
+  bank_tran_id: string;
+  refund_amount: number;
+  refund_remarks: string;
+  re_fe_id: string;
+}) => {
+  if (!storeId || !storePasswd) {
+    throw new AppError(500, 'SSLCommerz credentials not configured in environment!');
+  }
+
+  const refundUrl = `${getBaseUrl()}/validator/api/merchantTransIDvalidationAPI.php?refund_amount=${encodeURIComponent(
+    params.refund_amount.toString(),
+  )}&refund_remarks=${encodeURIComponent(params.refund_remarks)}&bank_tran_id=${encodeURIComponent(
+    params.bank_tran_id,
+  )}&re_fe_id=${encodeURIComponent(
+    params.re_fe_id,
+  )}&store_id=${encodeURIComponent(storeId)}&store_passwd=${encodeURIComponent(
+    storePasswd,
+  )}&v=1&format=json`;
+
+  const response = await fetch(refundUrl, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new AppError(502, 'SSLCommerz refund service unreachable!');
+  }
+
+  const result = (await response.json()) as {
+    status: string;
+    refund_ref_id?: string;
+    errorReason?: string;
+    [key: string]: any;
+  };
+
+  return result;
+};
+
 export const SSLCommerzService = {
   initPayment,
   validatePayment,
+  initiateRefund,
 };

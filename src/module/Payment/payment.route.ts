@@ -16,4 +16,11 @@ router.post(
   PaymentController.initiatePayment,
 );
 
+// Cancel confirmed booking and process refund (allowed at least 1 hour before startTime)
+router.post(
+  '/refund/:bookingId',
+  auth('DRIVER', 'MANAGER', 'ADMIN'),
+  PaymentController.refundPayment,
+);
+
 export const PaymentRoutes = router;

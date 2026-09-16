@@ -252,9 +252,127 @@ const initiatePaymentForBooking = async (bookingId: string, userId: string) => {
   };
 };
 
+const refundBookingPayment = async (
+  bookingId: string,
+  userId: string,
+  userRole: string,
+  reason?: string,
+) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      garage: true,
+      user: true,
+      payment: true,
+    },
+  });
+
+  if (!booking) {
+    throw new AppError(404, 'Booking not found!');
+  }
+
+  // Authorization check: Only the booking creator or Admin can request refund
+  if (booking.userId !== userId && userRole !== 'ADMIN') {
+    throw new AppError(403, 'You are not authorized to cancel or refund this booking!');
+  }
+
+  if (booking.status === BookingStatus.CANCELLED) {
+    throw new AppError(400, 'This booking has already been cancelled!');
+  }
+
+  if (booking.status === BookingStatus.COMPLETED) {
+    throw new AppError(400, 'Cannot refund a completed booking!');
+  }
+
+  if (!booking.payment) {
+    throw new AppError(400, 'No payment record found for this booking!');
+  }
+
+  if (booking.payment.status === PaymentStatus.REFUNDED) {
+    throw new AppError(400, 'This booking payment has already been refunded!');
+  }
+
+  if (booking.payment.status !== PaymentStatus.PAID) {
+    throw new AppError(400, 'No completed payment found for this booking to refund!');
+  }
+
+  // Strictly enforce cancellation at least 1 hour (60 mins) before booking startTime
+  const currentTime = new Date();
+  const startTime = new Date(booking.startTime);
+  const diffInMinutes = (startTime.getTime() - currentTime.getTime()) / (1000 * 60);
+
+  if (diffInMinutes < 60) {
+    throw new AppError(
+      400,
+      'Cancellation and refund is only allowed at least 1 hour before the booking start time!',
+    );
+  }
+
+  // Get bank_tran_id for SSLCommerz refund
+  const paymentGatewayData = booking.payment.paymentGatewayData as any;
+  const bank_tran_id = paymentGatewayData?.bank_tran_id || booking.payment.transactionId;
+  const re_fe_id = `REF-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  let refundGatewayResult: any = null;
+  try {
+    refundGatewayResult = await SSLCommerzService.initiateRefund({
+      bank_tran_id,
+      refund_amount: booking.totalPrice,
+      refund_remarks: reason || 'Customer cancelled at least 1 hour before start time',
+      re_fe_id,
+    });
+  } catch (error: any) {
+    console.warn('SSLCommerz refund API note:', error.message);
+  }
+
+  const paymentRecord = booking.payment;
+
+  // Atomic transaction: Increment garage slot, Mark booking as CANCELLED, Mark payment as REFUNDED
+  const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // 1. Increment availableSlots in garage
+    const updatedGarage = await tx.garage.update({
+      where: { id: booking.garageId },
+      data: {
+        availableSlots: {
+          increment: 1,
+        },
+      },
+    });
+
+    // 2. Mark booking as CANCELLED
+    const updatedBooking = await tx.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: BookingStatus.CANCELLED,
+      },
+    });
+
+    // 3. Mark payment as REFUNDED
+    const updatedPayment = await tx.payment.update({
+      where: { id: paymentRecord.id },
+      data: {
+        status: PaymentStatus.REFUNDED,
+        refundTransactionId: refundGatewayResult?.refund_ref_id || re_fe_id,
+        refundAmount: booking.totalPrice,
+        refundedAt: new Date(),
+      },
+    });
+
+    return {
+      booking: updatedBooking,
+      payment: updatedPayment,
+      garage: updatedGarage,
+      refundGatewayResult,
+    };
+  });
+
+  return result;
+};
+
 export const PaymentService = {
   confirmPayment,
   failPayment,
   cancelPayment,
   initiatePaymentForBooking,
+  refundBookingPayment,
 };

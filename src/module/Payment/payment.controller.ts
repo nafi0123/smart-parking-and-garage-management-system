@@ -230,9 +230,30 @@ const initiatePayment = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const refundPayment = catchAsync(async (req: Request, res: Response) => {
+  const { bookingId } = req.params;
+  const { userId, role } = (req as any).user;
+  const { reason } = req.body;
+
+  const result = await PaymentService.refundBookingPayment(
+    bookingId as string,
+    userId,
+    role,
+    reason,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Booking cancelled, payment refunded, and parking slot restored successfully',
+    data: result,
+  });
+});
+
 export const PaymentController = {
   confirmPayment,
   failPayment,
   cancelPayment,
   initiatePayment,
+  refundPayment,
 };

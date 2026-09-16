@@ -82,18 +82,22 @@ enum PaymentStatus {
   PAID
   FAILED
   CANCELLED
+  REFUNDED
 }
 
 model Payment {
-  id                 String        @id @default(uuid())
-  bookingId          String        @unique
-  userId             String
-  amount             Float
-  transactionId      String        @unique
-  status             PaymentStatus @default(PENDING)
-  paymentGatewayData Json?
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                  String        @id @default(uuid())
+  bookingId           String        @unique
+  userId              String
+  amount              Float
+  transactionId       String        @unique
+  status              PaymentStatus @default(PENDING)
+  paymentGatewayData  Json?
+  refundTransactionId String?
+  refundAmount        Float?
+  refundedAt          DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id])
