@@ -6,6 +6,8 @@ export interface ICreateGarage {
   availableSlots?: number;
   pricePerHour?: number;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   images?: string[];
 }
 
@@ -17,6 +19,8 @@ export interface IUpdateGarage {
   availableSlots?: number;
   pricePerHour?: number;
   location?: string;
+  latitude?: number;
+  longitude?: number;
   images?: string[];
 }
 
@@ -25,8 +29,20 @@ export interface IGarageQueryFilter {
   minPrice?: number;
   maxPrice?: number;
   onlyAvailable?: boolean | string;
+  minRating?: number;
   page?: number;
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+}
+
+export interface INearbyGarageQuery {
+  latitude: number | string;
+  longitude: number | string;
+  radius?: number | string; // in kilometers, default 10
+  minPrice?: number | string;
+  maxPrice?: number | string;
+  onlyAvailable?: boolean | string;
+  minRating?: number | string;
+  limit?: number | string;
 }

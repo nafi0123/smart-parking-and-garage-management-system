@@ -32,6 +32,13 @@ router.post(
 // Get all garages (Public / Search)
 router.get('/', GarageController.getAllGarages);
 
+// Search nearby garages within radius (Public)
+router.get(
+  '/nearby',
+  validateRequest(GarageValidation.nearbyGarageQueryValidationSchema),
+  GarageController.getNearbyGarages,
+);
+
 // Manager or Admin - Get garages owned by logged in user
 router.get('/my-garages', auth('MANAGER', 'ADMIN'), GarageController.getMyGarages);
 

@@ -13,6 +13,8 @@ const createGarageValidationSchema = z.object({
     availableSlots: z.coerce.number().int().nonnegative().optional(),
     pricePerHour: z.coerce.number().nonnegative().optional().default(0),
     location: z.string().optional(),
+    latitude: z.coerce.number().optional(),
+    longitude: z.coerce.number().optional(),
     images: z.array(z.string()).optional(),
   }),
 });
@@ -26,11 +28,31 @@ const updateGarageValidationSchema = z.object({
     availableSlots: z.coerce.number().int().nonnegative().optional(),
     pricePerHour: z.coerce.number().nonnegative().optional(),
     location: z.string().optional(),
+    latitude: z.coerce.number().optional(),
+    longitude: z.coerce.number().optional(),
     images: z.array(z.string()).optional(),
+  }),
+});
+
+const nearbyGarageQueryValidationSchema = z.object({
+  query: z.object({
+    latitude: z.coerce.number({
+      required_error: 'latitude is required for nearby search',
+    }),
+    longitude: z.coerce.number({
+      required_error: 'longitude is required for nearby search',
+    }),
+    radius: z.coerce.number().positive().optional().default(10),
+    minPrice: z.coerce.number().nonnegative().optional(),
+    maxPrice: z.coerce.number().nonnegative().optional(),
+    onlyAvailable: z.union([z.boolean(), z.string()]).optional(),
+    minRating: z.coerce.number().min(0).max(5).optional(),
+    limit: z.coerce.number().positive().optional().default(10),
   }),
 });
 
 export const GarageValidation = {
   createGarageValidationSchema,
   updateGarageValidationSchema,
+  nearbyGarageQueryValidationSchema,
 };

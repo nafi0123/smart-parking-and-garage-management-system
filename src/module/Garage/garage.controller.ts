@@ -111,6 +111,18 @@ const updateGarage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getNearbyGarages = catchAsync(async (req: Request, res: Response) => {
+  const result = await GarageService.getNearbyGarages(req.query as any);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Nearby garages retrieved successfully',
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 const deleteGarage = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { userId, role } = (req as any).user;
@@ -127,6 +139,7 @@ const deleteGarage = catchAsync(async (req: Request, res: Response) => {
 export const GarageController = {
   createGarage,
   getAllGarages,
+  getNearbyGarages,
   getMyGarages,
   getSingleGarage,
   updateGarage,
