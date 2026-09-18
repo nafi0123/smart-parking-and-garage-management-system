@@ -1,15 +1,30 @@
+import type { NextFunction, Request, Response } from 'express';
 import { Router } from 'express';
 import auth from '../../app/middlewares/auth';
 import validateRequest from '../../app/middlewares/validateRequest';
+import { upload } from '../../app/utils/cloudinary';
 import { GarageController } from './garage.controller';
 import { GarageValidation } from './garage.validation';
 
 const router = Router();
 
-// Manager or Admin - Create a garage
+const parseFormDataBody = (req: Request, _res: Response, next: NextFunction) => {
+  if (req.body?.data && typeof req.body.data === 'string') {
+    try {
+      req.body = JSON.parse(req.body.data);
+    } catch {
+      // ignore
+    }
+  }
+  next();
+};
+
+// Manager or Admin - Create a garage (supports multipart/form-data images or JSON)
 router.post(
   '/',
   auth('MANAGER', 'ADMIN'),
+  upload.array('images', 5),
+  parseFormDataBody,
   validateRequest(GarageValidation.createGarageValidationSchema),
   GarageController.createGarage,
 );
@@ -27,6 +42,8 @@ router.get('/:id', GarageController.getSingleGarage);
 router.patch(
   '/:id',
   auth('MANAGER', 'ADMIN'),
+  upload.array('images', 5),
+  parseFormDataBody,
   validateRequest(GarageValidation.updateGarageValidationSchema),
   GarageController.updateGarage,
 );

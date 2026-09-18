@@ -23,6 +23,7 @@ const createGarage = async (ownerId: string, payload: ICreateGarage) => {
         payload.availableSlots !== undefined ? payload.availableSlots : payload.totalSlots || 1,
       pricePerHour: payload.pricePerHour || 0,
       location: payload.location,
+      images: payload.images || [],
       ownerId,
     },
     include: {

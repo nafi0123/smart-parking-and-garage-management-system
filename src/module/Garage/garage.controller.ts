@@ -1,11 +1,34 @@
 import type { Request, Response } from 'express';
 import catchAsync from '../../app/utils/catchAsync';
+import { uploadMultipleToCloudinary } from '../../app/utils/cloudinary';
 import sendResponse from '../../app/utils/sendResponse';
 import { GarageService } from './garage.service';
 
 const createGarage = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user.userId;
-  const result = await GarageService.createGarage(userId, req.body);
+  let body = req.body;
+
+  if (typeof req.body?.data === 'string') {
+    try {
+      body = JSON.parse(req.body.data);
+    } catch {
+      // continue with req.body
+    }
+  }
+
+  const uploadedImages: string[] = [];
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    const urls = await uploadMultipleToCloudinary(req.files as Express.Multer.File[]);
+    uploadedImages.push(...urls);
+  } else if (req.file) {
+    const urls = await uploadMultipleToCloudinary([req.file as Express.Multer.File]);
+    uploadedImages.push(...urls);
+  }
+
+  const bodyImages = Array.isArray(body.images) ? body.images : body.images ? [body.images] : [];
+  body.images = [...bodyImages, ...uploadedImages];
+
+  const result = await GarageService.createGarage(userId, body);
 
   sendResponse(res, {
     statusCode: 201,
@@ -54,7 +77,31 @@ const getSingleGarage = catchAsync(async (req: Request, res: Response) => {
 const updateGarage = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const { userId, role } = (req as any).user;
-  const result = await GarageService.updateGarage(id as string, userId, role, req.body);
+  let body = req.body;
+
+  if (typeof req.body?.data === 'string') {
+    try {
+      body = JSON.parse(req.body.data);
+    } catch {
+      // continue with req.body
+    }
+  }
+
+  const uploadedImages: string[] = [];
+  if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+    const urls = await uploadMultipleToCloudinary(req.files as Express.Multer.File[]);
+    uploadedImages.push(...urls);
+  } else if (req.file) {
+    const urls = await uploadMultipleToCloudinary([req.file as Express.Multer.File]);
+    uploadedImages.push(...urls);
+  }
+
+  if (uploadedImages.length > 0) {
+    const bodyImages = Array.isArray(body.images) ? body.images : body.images ? [body.images] : [];
+    body.images = [...bodyImages, ...uploadedImages];
+  }
+
+  const result = await GarageService.updateGarage(id as string, userId, role, body);
 
   sendResponse(res, {
     statusCode: 200,

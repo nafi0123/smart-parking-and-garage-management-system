@@ -6,6 +6,7 @@ export interface ICreateGarage {
   availableSlots?: number;
   pricePerHour?: number;
   location?: string;
+  images?: string[];
 }
 
 export interface IUpdateGarage {
@@ -16,6 +17,7 @@ export interface IUpdateGarage {
   availableSlots?: number;
   pricePerHour?: number;
   location?: string;
+  images?: string[];
 }
 
 export interface IGarageQueryFilter {
