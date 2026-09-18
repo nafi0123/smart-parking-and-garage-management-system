@@ -8,6 +8,7 @@ import { AuthRoutes } from './module/Auth/auth.route';
 import { BookingRoutes } from './module/Booking/booking.route';
 import { GarageRoutes } from './module/Garage/garage.route';
 import { PaymentRoutes } from './module/Payment/payment.route';
+import { ReviewRoutes } from './module/Review/review.route';
 import { UserRoutes } from './module/User/user.route';
 
 const app: Application = express();
@@ -23,6 +24,7 @@ app.use('/api/v1/auth', AuthRoutes);
 app.use('/api/v1/garages', GarageRoutes);
 app.use('/api/v1/bookings', BookingRoutes);
 app.use('/api/v1/payments', PaymentRoutes);
+app.use('/api/v1/reviews', ReviewRoutes);
 
 // Test Google Login page
 app.get('/test-google', (_req: Request, res: Response) => {
