@@ -390,6 +390,62 @@ const updateBookingStatus = async (
   return result;
 };
 
+import { generateInvoicePDF } from '../../app/utils/pdfGenerator';
+
+const generateBookingInvoice = async (bookingId: string, userId: string, userRole: string) => {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      user: true,
+      garage: true,
+      payment: true,
+    },
+  });
+
+  if (!booking) {
+    throw new AppError(404, 'Booking not found!');
+  }
+
+  // Authorization check: only the booking owner, garage owner, or admin can access invoice
+  if (booking.userId !== userId && booking.garage.ownerId !== userId && userRole !== 'ADMIN') {
+    throw new AppError(403, 'You are not authorized to access this invoice!');
+  }
+
+  const durationHours = Math.max(
+    1,
+    Number(
+      (
+        (new Date(booking.endTime).getTime() - new Date(booking.startTime).getTime()) /
+        (1000 * 60 * 60)
+      ).toFixed(1),
+    ),
+  );
+
+  const pdfBuffer = await generateInvoicePDF({
+    bookingId: booking.id,
+    transactionId: booking.payment?.transactionId,
+    paymentStatus: booking.payment?.status || booking.status,
+    paidAmount: booking.payment?.amount || booking.totalPrice,
+    paidAt: booking.payment?.createdAt || booking.createdAt,
+    customerName: booking.user.name,
+    customerEmail: booking.user.email,
+    customerPhone: booking.user.phone,
+    garageName: booking.garage.name,
+    garageAddress: booking.garage.address,
+    garageLocation: booking.garage.location,
+    vehicleNumber: booking.vehicleNumber,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    durationHours,
+    pricePerHour: booking.garage.pricePerHour,
+  });
+
+  return {
+    filename: `invoice-${booking.id.slice(0, 8)}.pdf`,
+    pdfBuffer,
+  };
+};
+
 export const BookingService = {
   createBooking,
   getMyBookings,
@@ -398,4 +454,5 @@ export const BookingService = {
   getSingleBooking,
   cancelBooking,
   updateBookingStatus,
+  generateBookingInvoice,
 };

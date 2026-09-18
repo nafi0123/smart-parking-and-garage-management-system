@@ -90,6 +90,17 @@ const updateBookingStatus = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getBookingInvoice = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userId, role } = (req as any).user;
+  const result = await BookingService.generateBookingInvoice(id as string, userId, role);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `inline; filename="${result.filename}"`);
+  res.setHeader('Content-Length', result.pdfBuffer.length);
+  res.send(result.pdfBuffer);
+});
+
 export const BookingController = {
   createBooking,
   getMyBookings,
@@ -98,4 +109,5 @@ export const BookingController = {
   getSingleBooking,
   cancelBooking,
   updateBookingStatus,
+  getBookingInvoice,
 };

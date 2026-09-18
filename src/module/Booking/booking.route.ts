@@ -26,6 +26,9 @@ router.get('/', auth('ADMIN'), BookingController.getAllBookings);
 // Get single booking details
 router.get('/:id', auth('DRIVER', 'MANAGER', 'ADMIN'), BookingController.getSingleBooking);
 
+// Download/View PDF Invoice for booking
+router.get('/:id/invoice', auth('DRIVER', 'MANAGER', 'ADMIN'), BookingController.getBookingInvoice);
+
 // Cancel a booking
 router.patch('/:id/cancel', auth('DRIVER', 'MANAGER', 'ADMIN'), BookingController.cancelBooking);
 
