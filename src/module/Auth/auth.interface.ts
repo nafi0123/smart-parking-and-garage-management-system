@@ -12,3 +12,7 @@ export interface IVerifyOtp {
   email: string;
   otpCode: string;
 }
+
+export interface IGoogleLogin {
+  idToken: string;
+}

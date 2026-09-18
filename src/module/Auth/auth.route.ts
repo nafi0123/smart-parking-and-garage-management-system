@@ -8,6 +8,12 @@ const router = Router();
 router.post('/login', validateRequest(AuthValidation.loginValidationSchema), AuthController.login);
 
 router.post(
+  '/google-login',
+  validateRequest(AuthValidation.googleLoginValidationSchema),
+  AuthController.googleLogin,
+);
+
+router.post(
   '/verify-otp',
   validateRequest(AuthValidation.verifyOtpValidationSchema),
   AuthController.verifyOtp,

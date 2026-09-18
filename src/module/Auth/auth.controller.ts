@@ -25,6 +25,28 @@ const login = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const googleLogin = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.googleLogin(req.body);
+
+  // Set refresh token in httpOnly cookie
+  res.cookie('refreshToken', result.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  });
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Google login successful',
+    data: {
+      accessToken: result.accessToken,
+      user: result.user,
+    },
+  });
+});
+
 const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.verifyOtp(req.body);
 
@@ -38,5 +60,6 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
 
 export const AuthController = {
   login,
+  googleLogin,
   verifyOtp,
 };

@@ -18,7 +18,8 @@ model User {
   name       String
   email      String   @unique
   phone      String?
-  password   String
+  password   String?
+  picture    String?
   role       Role     @default(DRIVER)
   isActive   Boolean  @default(true)
   isVerified Boolean  @default(false)

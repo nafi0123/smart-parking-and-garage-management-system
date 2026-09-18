@@ -23,8 +23,15 @@ const verifyOtpValidationSchema = z.object({
   }),
 });
 
+const googleLoginValidationSchema = z.object({
+  body: z.object({
+    idToken: z.string({ required_error: 'Google ID token is required' }),
+  }),
+});
+
 export const AuthValidation = {
   loginValidationSchema,
   sendOtpValidationSchema,
   verifyOtpValidationSchema,
+  googleLoginValidationSchema,
 };

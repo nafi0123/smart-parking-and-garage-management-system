@@ -1,3 +1,4 @@
+import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express, { type Application, type Request, type Response } from 'express';
@@ -22,6 +23,11 @@ app.use('/api/v1/auth', AuthRoutes);
 app.use('/api/v1/garages', GarageRoutes);
 app.use('/api/v1/bookings', BookingRoutes);
 app.use('/api/v1/payments', PaymentRoutes);
+
+// Test Google Login page
+app.get('/test-google', (_req: Request, res: Response) => {
+  res.sendFile(path.join(process.cwd(), 'test-google-login.html'));
+});
 
 // Health check
 app.get('/', (_req: Request, res: Response) => {
