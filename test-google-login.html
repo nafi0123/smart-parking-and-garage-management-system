@@ -21,15 +21,15 @@
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 1rem;
-      max-width: 580px;
+      max-width: 600px;
       width: 100%;
       padding: 2.5rem 2rem;
       text-align: center;
       box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
     }
     h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
-    p { color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; }
-    .btn-container { display: flex; justify-content: center; margin-bottom: 1.5rem; }
+    p.sub { color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; }
+    .btn-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
     #token-box {
       display: none;
       margin-top: 1.5rem;
@@ -41,7 +41,7 @@
     }
     textarea {
       width: 100%;
-      height: 120px;
+      height: 110px;
       background: #1e293b;
       color: #38bdf8;
       border: 1px solid #475569;
@@ -57,57 +57,120 @@
       background: #3b82f6;
       color: white;
       border: none;
-      padding: 0.6rem 1.2rem;
+      padding: 0.7rem 1.2rem;
       border-radius: 0.5rem;
       cursor: pointer;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       width: 100%;
+      margin-bottom: 0.5rem;
     }
     .copy-btn:hover { background: #2563eb; }
+    .test-api-btn {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 0.7rem 1.2rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      width: 100%;
+    }
+    .test-api-btn:hover { background: #059669; }
+    .api-res-box {
+      margin-top: 1rem;
+      background: #111827;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #a7f3d0;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <h1>Google Login Token Generator</h1>
-    <p>Sign in with your Google account below to obtain a real ID Token for Postman testing.</p>
+    <p class="sub">Click the Google button below to sign in and get your real ID Token for testing.</p>
 
     <div class="btn-container">
-      <div id="g_id_onload"
-           data-client_id="20154548950-uhhvonq6a65a5bacd6096ckp35l0ofp1.apps.googleusercontent.com"
-           data-callback="handleCredentialResponse"
-           data-auto_prompt="false">
-      </div>
-      <div class="g_id_signin"
-           data-type="standard"
-           data-size="large"
-           data-theme="outline"
-           data-text="sign_in_with"
-           data-shape="rectangular"
-           data-logo_alignment="left">
-      </div>
+      <div id="google-button"></div>
     </div>
 
     <div id="token-box">
       <h3 style="font-size: 1rem; color: #10b981; margin-bottom: 0.25rem;">✓ ID Token Received!</h3>
-      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">Copy this token and use it in Postman body:</p>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">Copy this token or test login directly:</p>
       <textarea id="token-text" readonly></textarea>
       <button class="copy-btn" onclick="copyToken()">📋 Copy ID Token for Postman</button>
+      <button class="test-api-btn" onclick="testBackendLogin()">🚀 Test Backend Login API Right Now</button>
+      <div id="api-result" class="api-res-box"></div>
     </div>
   </div>
 
   <script>
+    const CLIENT_ID = "20154548950-uhhvonq6a65a5bacd6096ckp35l0ofp1.apps.googleusercontent.com";
+
     function handleCredentialResponse(response) {
-      const idToken = response.credential;
-      document.getElementById('token-text').value = idToken;
-      document.getElementById('token-box').style.display = 'block';
+      if (response && response.credential) {
+        const idToken = response.credential;
+        document.getElementById('token-text').value = idToken;
+        document.getElementById('token-box').style.display = 'block';
+      }
     }
+
+    window.onload = function() {
+      if (window.google && google.accounts && google.accounts.id) {
+        google.accounts.id.initialize({
+          client_id: CLIENT_ID,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        google.accounts.id.renderButton(
+          document.getElementById('google-button'),
+          {
+            theme: 'filled_blue',
+            size: 'large',
+            type: 'standard',
+            text: 'continue_with',
+            shape: 'rectangular',
+            width: 280
+          }
+        );
+      }
+    };
 
     function copyToken() {
       const textarea = document.getElementById('token-text');
       textarea.select();
       navigator.clipboard.writeText(textarea.value);
-      alert('ID Token copied to clipboard! Now paste it in Postman.');
+      alert('ID Token copied to clipboard! You can paste it in Postman.');
+    }
+
+    async function testBackendLogin() {
+      const idToken = document.getElementById('token-text').value;
+      const resBox = document.getElementById('api-result');
+      resBox.style.display = 'block';
+      resBox.innerText = 'Calling /api/v1/auth/google-login...';
+
+      try {
+        const res = await fetch('/api/v1/auth/google-login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        });
+        const data = await res.json();
+        resBox.innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resBox.innerText = 'Error: ' + err.message;
+      }
     }
   </script>
 </body>

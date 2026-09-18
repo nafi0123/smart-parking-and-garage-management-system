@@ -1,7 +1,17 @@
 import Redis from 'ioredis';
 
-const redisClient = new Redis(process.env.REDIS_URL as string, {
-  maxRetriesPerRequest: null,
+const redisUrl = process.env.REDIS_URL;
+
+const redisClient = new Redis(redisUrl || '', {
+  maxRetriesPerRequest: 1,
+  connectTimeout: 5000,
+  lazyConnect: true,
+  retryStrategy(times) {
+    if (times > 2) {
+      return null;
+    }
+    return Math.min(times * 200, 1000);
+  },
 });
 
 redisClient.on('connect', () => {
@@ -9,7 +19,7 @@ redisClient.on('connect', () => {
 });
 
 redisClient.on('error', (err) => {
-  console.error('❌ Redis Connection Error:', err);
+  console.error('❌ Redis Connection Error:', (err as any)?.message || err);
 });
 
 export default redisClient;
