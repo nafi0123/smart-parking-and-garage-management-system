@@ -97,10 +97,25 @@ const renderHtmlStatusPage = (
       font-weight: 600;
       color: #e2e8f0;
     }
+    .action-btn {
+      display: inline-block;
+      background: ${themeColor};
+      color: #ffffff;
+      text-decoration: none;
+      padding: 0.75rem 1.75rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-top: 1.25rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+    .action-btn:hover {
+      opacity: 0.9;
+    }
     .footer-note {
       font-size: 0.8rem;
       color: #64748b;
-      margin-top: 1rem;
+      margin-top: 1.5rem;
     }
   </style>
 </head>
@@ -136,6 +151,10 @@ const renderHtmlStatusPage = (
         <span class="value" style="color: ${themeColor}; text-transform: uppercase;">${options.status}</span>
       </div>
     </div>
+
+    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/my-bookings" class="action-btn">
+      ${isSuccess ? 'View My Bookings' : 'Return to Dashboard'}
+    </a>
 
     <p class="footer-note">Smart Parking & Garage Management System</p>
   </div>
