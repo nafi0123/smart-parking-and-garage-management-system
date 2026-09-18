@@ -4,12 +4,15 @@ import cors from 'cors';
 import express, { type Application, type Request, type Response } from 'express';
 import globalErrorHandler from './app/errors/globalErrorHandler';
 import notFound from './app/middlewares/notFound';
+import { AnalyticsRoutes } from './module/Analytics/analytics.route';
 import { AuthRoutes } from './module/Auth/auth.route';
 import { BookingRoutes } from './module/Booking/booking.route';
+import { FavoriteRoutes } from './module/Favorite/favorite.route';
 import { GarageRoutes } from './module/Garage/garage.route';
 import { PaymentRoutes } from './module/Payment/payment.route';
 import { ReviewRoutes } from './module/Review/review.route';
 import { UserRoutes } from './module/User/user.route';
+import { VehicleRoutes } from './module/Vehicle/vehicle.route';
 
 const app: Application = express();
 
@@ -25,6 +28,9 @@ app.use('/api/v1/garages', GarageRoutes);
 app.use('/api/v1/bookings', BookingRoutes);
 app.use('/api/v1/payments', PaymentRoutes);
 app.use('/api/v1/reviews', ReviewRoutes);
+app.use('/api/v1/vehicles', VehicleRoutes);
+app.use('/api/v1/favorites', FavoriteRoutes);
+app.use('/api/v1/analytics', AnalyticsRoutes);
 
 // Test Google Login page
 app.get('/test-google', (_req: Request, res: Response) => {
