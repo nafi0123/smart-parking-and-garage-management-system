@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -43,9 +44,26 @@ app.use('/api/v1/vehicles', VehicleRoutes);
 app.use('/api/v1/favorites', FavoriteRoutes);
 app.use('/api/v1/analytics', AnalyticsRoutes);
 
-// Test Google Login page
-app.get('/test-google', (_req: Request, res: Response) => {
-  res.sendFile(path.join(process.cwd(), 'test-google-login.html'));
+// Test Google Login page (handles both GET page load and POST redirect from Google)
+app.all('/test-google', (req: Request, res: Response) => {
+  const filePath = path.join(process.cwd(), 'test-google-login.html');
+  try {
+    let html = fs.readFileSync(filePath, 'utf-8');
+    const credential =
+      (req.body?.credential as string | undefined) ||
+      (req.query?.credential as string | undefined) ||
+      '';
+    if (credential) {
+      html = html.replace(
+        '/* __SERVER_TOKEN_PLACEHOLDER__ */',
+        `window.__SERVER_TOKEN__ = ${JSON.stringify(credential)};`,
+      );
+    }
+    res.setHeader('Content-Type', 'text/html');
+    res.status(200).send(html);
+  } catch (_err) {
+    res.status(500).send('Error loading test page');
+  }
 });
 
 // Health check

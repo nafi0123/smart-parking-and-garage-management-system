@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Google Login Test | Smart Parking System</title>
+  <title>Google Login Token Generator | Smart Parking</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,27 +21,28 @@
       background: #1e293b;
       border: 1px solid #334155;
       border-radius: 1rem;
-      max-width: 600px;
+      max-width: 620px;
       width: 100%;
       padding: 2.5rem 2rem;
       text-align: center;
       box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
     }
     h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: #fff; }
-    p.sub { color: #94a3b8; font-size: 0.95rem; margin-bottom: 2rem; }
+    p.sub { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.5rem; }
     .btn-container { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    
     #token-box {
       display: none;
       margin-top: 1.5rem;
       text-align: left;
       background: #0f172a;
-      border: 1px solid #334155;
+      border: 1px solid #10b981;
       border-radius: 0.75rem;
       padding: 1.25rem;
     }
     textarea {
       width: 100%;
-      height: 110px;
+      height: 120px;
       background: #1e293b;
       color: #38bdf8;
       border: 1px solid #475569;
@@ -57,25 +58,27 @@
       background: #3b82f6;
       color: white;
       border: none;
-      padding: 0.7rem 1.2rem;
+      padding: 0.75rem 1.2rem;
       border-radius: 0.5rem;
       cursor: pointer;
       font-weight: 600;
       font-size: 0.95rem;
       width: 100%;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
+      transition: background 0.2s;
     }
     .copy-btn:hover { background: #2563eb; }
     .test-api-btn {
       background: #10b981;
       color: white;
       border: none;
-      padding: 0.7rem 1.2rem;
+      padding: 0.75rem 1.2rem;
       border-radius: 0.5rem;
       cursor: pointer;
       font-weight: 600;
       font-size: 0.95rem;
       width: 100%;
+      transition: background 0.2s;
     }
     .test-api-btn:hover { background: #059669; }
     .api-res-box {
@@ -88,49 +91,89 @@
       color: #a7f3d0;
       white-space: pre-wrap;
       word-break: break-all;
-      max-height: 200px;
+      max-height: 220px;
       overflow-y: auto;
       display: none;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+    .info-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.5rem;
+      padding: 0.85rem;
+      margin-top: 1rem;
+      text-align: left;
+      font-size: 0.8rem;
+      color: #94a3b8;
     }
   </style>
 </head>
 <body>
   <div class="card">
+    <span class="badge">Google OAuth Helper</span>
     <h1>Google Login Token Generator</h1>
-    <p class="sub">Click the Google button below to sign in and get your real ID Token for testing.</p>
+    <p class="sub">Click the button below to sign in with your Google account and get your ID Token for Postman testing.</p>
 
+    <!-- Google Button -->
     <div class="btn-container">
       <div id="google-button"></div>
     </div>
 
+    <!-- Token Output Box -->
     <div id="token-box">
-      <h3 style="font-size: 1rem; color: #10b981; margin-bottom: 0.25rem;">✓ ID Token Received!</h3>
-      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">Copy this token or test login directly:</p>
+      <h3 style="font-size: 1.05rem; color: #34d399; margin-bottom: 0.25rem;">✓ ID Token Ready!</h3>
+      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem;">Copy this token to Postman or test the API immediately below:</p>
       <textarea id="token-text" readonly></textarea>
       <button class="copy-btn" onclick="copyToken()">📋 Copy ID Token for Postman</button>
       <button class="test-api-btn" onclick="testBackendLogin()">🚀 Test Backend Login API Right Now</button>
       <div id="api-result" class="api-res-box"></div>
     </div>
+
+    <div class="info-box">
+      <strong style="color: #f1f5f9;">📌 Instructions:</strong>
+      <ol style="margin-left: 1.2rem; margin-top: 0.4rem; line-height: 1.5;">
+        <li>Add <code>https://smart-parking-backend-omega.vercel.app/test-google</code> to <b>Authorised redirect URIs</b> in Google Cloud Console.</li>
+        <li>OR in Chrome site settings, set <b>"Pop-ups and redirects"</b> to <b>"Allow"</b>.</li>
+      </ol>
+    </div>
   </div>
 
   <script>
     const CLIENT_ID = "20154548950-uhhvonq6a65a5bacd6096ckp35l0ofp1.apps.googleusercontent.com";
+    
+    /* __SERVER_TOKEN_PLACEHOLDER__ */
+
+    function displayToken(token) {
+      if (!token) return;
+      document.getElementById('token-text').value = token;
+      document.getElementById('token-box').style.display = 'block';
+      document.getElementById('token-box').scrollIntoView({ behavior: 'smooth' });
+    }
 
     function handleCredentialResponse(response) {
       if (response && response.credential) {
-        const idToken = response.credential;
-        document.getElementById('token-text').value = idToken;
-        document.getElementById('token-box').style.display = 'block';
+        displayToken(response.credential);
       }
     }
 
-    window.onload = function() {
+    function initGoogle() {
       if (window.google && google.accounts && google.accounts.id) {
+        const currentUrl = window.location.origin + window.location.pathname;
         google.accounts.id.initialize({
           client_id: CLIENT_ID,
           callback: handleCredentialResponse,
+          ux_mode: 'redirect',
+          login_uri: currentUrl,
           auto_select: false,
-          cancel_on_tap_outside: true,
         });
 
         google.accounts.id.renderButton(
@@ -145,13 +188,32 @@
           }
         );
       }
-    };
+    }
+
+    window.addEventListener('load', () => {
+      if (typeof window.__SERVER_TOKEN__ !== 'undefined' && window.__SERVER_TOKEN__) {
+        displayToken(window.__SERVER_TOKEN__);
+        return;
+      }
+
+      if (window.location.hash) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        const hashToken = params.get('id_token') || params.get('credential');
+        if (hashToken) {
+          displayToken(hashToken);
+          return;
+        }
+      }
+
+      initGoogle();
+      setTimeout(initGoogle, 1000);
+    });
 
     function copyToken() {
       const textarea = document.getElementById('token-text');
       textarea.select();
       navigator.clipboard.writeText(textarea.value);
-      alert('ID Token copied to clipboard! You can paste it in Postman.');
+      alert('ID Token copied to clipboard! Paste it into Postman.');
     }
 
     async function testBackendLogin() {
