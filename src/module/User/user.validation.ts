@@ -8,9 +8,9 @@ const registerValidationSchema = z.object({
     password: z
       .string({ required_error: 'Password is required' })
       .min(6, 'Password must be at least 6 characters'),
-    role: z.enum(['DRIVER', 'MANAGER', 'ADMIN'], {
+    role: z.enum(['DRIVER', 'MANAGER'], {
       required_error: 'Role is required',
-      invalid_type_error: 'Role must be DRIVER, MANAGER, or ADMIN',
+      invalid_type_error: 'Role must be DRIVER or MANAGER',
     }),
   }),
 });
