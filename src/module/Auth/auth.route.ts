@@ -19,4 +19,6 @@ router.post(
   AuthController.verifyOtp,
 );
 
+router.post('/logout', AuthController.logout);
+
 export const AuthRoutes = router;
