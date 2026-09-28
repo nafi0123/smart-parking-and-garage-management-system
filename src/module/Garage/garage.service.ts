@@ -240,6 +240,16 @@ const getMyGarages = async (ownerId: string) => {
   const garages = await prisma.garage.findMany({
     where: { ownerId },
     orderBy: { createdAt: 'desc' },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
   });
 
   return garages;
