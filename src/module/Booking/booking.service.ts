@@ -410,6 +410,14 @@ const updateBookingStatus = async (
     throw new AppError(403, 'You are not authorized to update this booking status!');
   }
 
+  // Strict Rule: COMPLETED bookings cannot be cancelled or modified
+  if (booking.status === BookingStatus.COMPLETED) {
+    throw new AppError(
+      400,
+      'This booking is already COMPLETED. It cannot be cancelled or modified anymore.',
+    );
+  }
+
   const oldStatus = booking.status;
   const newStatus = payload.status;
 
