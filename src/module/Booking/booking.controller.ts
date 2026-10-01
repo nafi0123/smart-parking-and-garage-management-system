@@ -16,8 +16,8 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyBookings = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as any).user.userId;
-  const result = await BookingService.getMyBookings(userId);
+  const { userId, email } = (req as any).user;
+  const result = await BookingService.getMyBookings(userId, email);
 
   sendResponse(res, {
     statusCode: 200,
@@ -28,8 +28,8 @@ const getMyBookings = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getManagerBookings = catchAsync(async (req: Request, res: Response) => {
-  const managerId = (req as any).user.userId;
-  const result = await BookingService.getManagerBookings(managerId);
+  const { userId, email } = (req as any).user;
+  const result = await BookingService.getManagerBookings(userId, email);
 
   sendResponse(res, {
     statusCode: 200,
@@ -92,8 +92,8 @@ const updateBookingStatus = catchAsync(async (req: Request, res: Response) => {
 
 const getBookingInvoice = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { userId, role } = (req as any).user;
-  const result = await BookingService.generateBookingInvoice(id as string, userId, role);
+  const { userId, role, email } = (req as any).user;
+  const result = await BookingService.generateBookingInvoice(id as string, userId, role, email);
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${result.filename}"`);

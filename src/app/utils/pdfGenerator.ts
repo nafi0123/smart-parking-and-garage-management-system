@@ -20,196 +20,270 @@ interface IInvoiceData {
 }
 
 /**
- * Generate PDF Invoice Buffer
+ * Generate Clean, Professional PDF Invoice Buffer
  */
 export const generateInvoicePDF = (data: IInvoiceData): Promise<Buffer> => {
   return new Promise((resolve, reject) => {
     try {
-      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
       const buffers: Buffer[] = [];
 
       doc.on('data', (chunk) => buffers.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(buffers)));
       doc.on('error', (err) => reject(err));
 
-      // Primary Colors
-      const primaryColor = '#1e3a8a'; // Deep Navy
-      const secondaryColor = '#3b82f6'; // Bright Blue
-      const textColor = '#1f2937';
-      const grayColor = '#6b7280';
-      const lightBg = '#f3f4f6';
+      // Brand Palette
+      const navyDark = '#0f2a6b';
+      const bluePrimary = '#1e40af';
+      const textMain = '#111827';
+      const textMuted = '#4b5563';
+      const bgLight = '#f8fafc';
+      const lineBorder = '#e2e8f0';
 
-      // 1. Header & Branding
+      // 1. Top Header Banner
       doc
-        .fillColor(primaryColor)
-        .fontSize(22)
+        .fillColor(navyDark)
+        .fontSize(20)
         .font('Helvetica-Bold')
-        .text('SMART PARKING SYSTEM', 50, 50);
+        .text('PARKWISE SMART PARKING', 40, 40);
 
       doc
-        .fillColor(grayColor)
-        .fontSize(10)
+        .fillColor(textMuted)
+        .fontSize(9)
         .font('Helvetica')
-        .text('Smart Garage & Parking Management Platform', 50, 75)
-        .text('Support: support@smartparking.com | Web: smartparking.com', 50, 88);
+        .text('Central Automated Garage & Parking Network', 40, 65)
+        .text('Website: smartparking.com  |  Support: support@smartparking.com', 40, 78);
 
-      // Invoice Title
+      // Top Right: Invoice Header
       doc
-        .fillColor(primaryColor)
+        .fillColor(bluePrimary)
         .fontSize(16)
         .font('Helvetica-Bold')
-        .text('PARKING RECEIPT / INVOICE', 350, 50, { align: 'right' });
+        .text('OFFICIAL RECEIPT', 320, 40, { width: 235, align: 'right' });
 
       const invoiceNumber = `INV-${data.bookingId.slice(0, 8).toUpperCase()}`;
+      const issueDate = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+
       doc
-        .fillColor(textColor)
+        .fillColor(textMain)
         .fontSize(9)
+        .font('Helvetica-Bold')
+        .text(`Invoice No: ${invoiceNumber}`, 320, 62, { width: 235, align: 'right' });
+
+      doc
+        .fillColor(textMuted)
         .font('Helvetica')
-        .text(`Invoice No: ${invoiceNumber}`, 350, 72, { align: 'right' })
-        .text(`Date: ${new Date().toLocaleDateString('en-US')}`, 350, 86, { align: 'right' })
-        .text(`Status: ${data.paymentStatus.toUpperCase()}`, 350, 100, { align: 'right' });
+        .text(`Issue Date: ${issueDate}`, 320, 75, { width: 235, align: 'right' })
+        .text(`Status: ${data.paymentStatus.toUpperCase()}`, 320, 88, {
+          width: 235,
+          align: 'right',
+        });
+
+      // Top Divider Line
+      doc.moveTo(40, 108).lineTo(555, 108).strokeColor(bluePrimary).lineWidth(1.5).stroke();
+
+      // 2. Customer & Garage Facility Info (Side by Side)
+      const infoTop = 120;
+
+      // Left Box: Billed To Customer
+      doc
+        .fillColor(navyDark)
+        .fontSize(10)
+        .font('Helvetica-Bold')
+        .text('BILLED TO (CUSTOMER):', 40, infoTop);
+
+      doc
+        .fillColor(textMain)
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .text(data.customerName || 'Valued Driver', 40, infoTop + 16, { width: 240 });
+
+      doc
+        .fillColor(textMuted)
+        .font('Helvetica')
+        .text(`Email: ${data.customerEmail}`, 40, infoTop + 29, { width: 240 })
+        .text(`Phone: ${data.customerPhone || 'N/A'}`, 40, infoTop + 42, { width: 240 })
+        .text(`Vehicle Plate: ${data.vehicleNumber || 'N/A (Standard Spot)'}`, 40, infoTop + 55, {
+          width: 240,
+        });
+
+      // Right Box: Garage Facility
+      doc
+        .fillColor(navyDark)
+        .fontSize(10)
+        .font('Helvetica-Bold')
+        .text('PARKING FACILITY:', 310, infoTop);
+
+      doc
+        .fillColor(textMain)
+        .fontSize(9)
+        .font('Helvetica-Bold')
+        .text(data.garageName || 'Parking Facility', 310, infoTop + 16, { width: 245 });
+
+      doc
+        .fillColor(textMuted)
+        .font('Helvetica')
+        .text(`Address: ${data.garageAddress}`, 310, infoTop + 29, { width: 245 })
+        .text(`Zone / Area: ${data.garageLocation || 'Dhaka'}`, 310, infoTop + 42, { width: 245 })
+        .text(`Rate: BDT ${Number(data.pricePerHour || 0).toFixed(2)} / hour`, 310, infoTop + 55, {
+          width: 245,
+        });
 
       // Divider Line
-      doc.moveTo(50, 120).lineTo(545, 120).strokeColor(secondaryColor).lineWidth(1.5).stroke();
+      doc.moveTo(40, 195).lineTo(555, 195).strokeColor(lineBorder).lineWidth(1).stroke();
 
-      // 2. Info Boxes (Customer & Garage)
-      // Customer Info
-      doc
-        .fillColor(primaryColor)
-        .fontSize(11)
-        .font('Helvetica-Bold')
-        .text('BILLED TO (DRIVER):', 50, 135);
+      // 3. Schedule & Session Summary Box
+      const schedTop = 205;
+      doc.roundedRect(40, schedTop, 515, 50, 4).fillAndStroke(bgLight, lineBorder);
 
-      doc
-        .fillColor(textColor)
-        .fontSize(10)
-        .font('Helvetica')
-        .text(data.customerName, 50, 152)
-        .text(data.customerEmail, 50, 166)
-        .text(data.customerPhone || 'Phone: N/A', 50, 180)
-        .text(`Vehicle No: ${data.vehicleNumber || 'N/A'}`, 50, 194);
+      const startStr = new Date(data.startTime).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
 
-      // Garage Info
-      doc
-        .fillColor(primaryColor)
-        .fontSize(11)
-        .font('Helvetica-Bold')
-        .text('GARAGE LOCATION:', 320, 135);
+      const endStr = new Date(data.endTime).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
 
       doc
-        .fillColor(textColor)
-        .fontSize(10)
-        .font('Helvetica')
-        .text(data.garageName, 320, 152)
-        .text(data.garageAddress, 320, 166)
-        .text(`Area/City: ${data.garageLocation || 'Dhaka'}`, 320, 180)
-        .text(`Rate: ৳${data.pricePerHour}/hour`, 320, 194);
-
-      // Divider Line
-      doc.moveTo(50, 220).lineTo(545, 220).strokeColor('#e5e7eb').lineWidth(1).stroke();
-
-      // 3. Booking Schedule
-      doc
-        .fillColor(primaryColor)
-        .fontSize(11)
-        .font('Helvetica-Bold')
-        .text('PARKING SCHEDULE', 50, 235);
-
-      const startStr = new Date(data.startTime).toLocaleString('en-US');
-      const endStr = new Date(data.endTime).toLocaleString('en-US');
-
-      doc
-        .fillColor(textColor)
+        .fillColor(navyDark)
         .fontSize(9)
+        .font('Helvetica-Bold')
+        .text('PARKING SCHEDULE & SESSION:', 52, schedTop + 8);
+
+      doc
+        .fillColor(textMain)
+        .fontSize(8.5)
         .font('Helvetica')
-        .text(`Start Time: ${startStr}`, 50, 252)
-        .text(`End Time:   ${endStr}`, 50, 266)
-        .text(`Total Duration: ${data.durationHours} Hour(s)`, 320, 252)
-        .text(`Transaction ID: ${data.transactionId || 'N/A'}`, 320, 266);
+        .text(`Entry Time:   ${startStr}`, 52, schedTop + 22)
+        .text(`Exit Time:    ${endStr}`, 52, schedTop + 34)
+        .text(`Total Duration:  ${data.durationHours} Hour(s)`, 310, schedTop + 22)
+        .text(`Transaction ID:  ${data.transactionId || 'SSL-TRX-CONFIRMED'}`, 310, schedTop + 34);
 
       // 4. Itemized Table
-      const tableTop = 295;
-      doc.rect(50, tableTop, 495, 22).fill(lightBg);
+      const tableTop = 270;
+      doc.rect(40, tableTop, 515, 22).fill(navyDark);
 
       doc
-        .fillColor(primaryColor)
-        .fontSize(10)
+        .fillColor('#ffffff')
+        .fontSize(9)
         .font('Helvetica-Bold')
-        .text('Item Description', 60, tableTop + 6)
-        .text('Rate / Hr', 280, tableTop + 6, { width: 70, align: 'right' })
-        .text('Hours', 370, tableTop + 6, { width: 50, align: 'right' })
-        .text('Amount (BDT)', 440, tableTop + 6, { width: 95, align: 'right' });
+        .text('Item Description', 50, tableTop + 6, { width: 240 })
+        .text('Rate / Hour', 290, tableTop + 6, { width: 80, align: 'right' })
+        .text('Hours', 380, tableTop + 6, { width: 50, align: 'right' })
+        .text('Total (BDT)', 445, tableTop + 6, { width: 100, align: 'right' });
 
       // Table Row
       const rowTop = tableTop + 28;
       doc
-        .fillColor(textColor)
-        .fontSize(10)
+        .fillColor(textMain)
+        .fontSize(9)
         .font('Helvetica')
-        .text(`Parking Slot Reservation (${data.garageName})`, 60, rowTop)
-        .text(`৳${data.pricePerHour.toFixed(2)}`, 280, rowTop, { width: 70, align: 'right' })
-        .text(`${data.durationHours}`, 370, rowTop, { width: 50, align: 'right' })
-        .text(`৳${data.paidAmount.toFixed(2)}`, 440, rowTop, { width: 95, align: 'right' });
-
-      // Divider Line
-      doc
-        .moveTo(50, rowTop + 20)
-        .lineTo(545, rowTop + 20)
-        .strokeColor('#e5e7eb')
-        .lineWidth(1)
-        .stroke();
-
-      // Total Breakdown
-      const subtotalTop = rowTop + 35;
-      doc
-        .fontSize(10)
-        .font('Helvetica-Bold')
-        .text('Subtotal:', 350, subtotalTop, { width: 90, align: 'right' })
-        .text(`৳${data.paidAmount.toFixed(2)}`, 440, subtotalTop, { width: 95, align: 'right' });
-
-      doc
-        .fontSize(12)
-        .font('Helvetica-Bold')
-        .fillColor(primaryColor)
-        .text('Total Paid:', 350, subtotalTop + 20, { width: 90, align: 'right' })
-        .text(`৳${data.paidAmount.toFixed(2)}`, 440, subtotalTop + 20, {
-          width: 95,
+        .text(`Parking Spot Reservation - ${data.garageName}`, 50, rowTop, { width: 240 })
+        .text(`BDT ${Number(data.pricePerHour || 0).toFixed(2)}`, 290, rowTop, {
+          width: 80,
+          align: 'right',
+        })
+        .text(`${data.durationHours}`, 380, rowTop, { width: 50, align: 'right' })
+        .text(`BDT ${Number(data.paidAmount || 0).toFixed(2)}`, 445, rowTop, {
+          width: 100,
           align: 'right',
         });
 
-      // 5. Payment Badge / Verification Stamp
-      doc.rect(50, subtotalTop + 5, 200, 45).fillAndStroke('#ecfdf5', '#10b981');
+      // Divider Below Table
+      doc
+        .moveTo(40, rowTop + 22)
+        .lineTo(555, rowTop + 22)
+        .strokeColor(lineBorder)
+        .lineWidth(1)
+        .stroke();
+
+      // 5. Financial Summary & Verified Badge
+      const sumTop = rowTop + 32;
+
+      // Left: SSLCommerz Verification Stamp Box
+      doc.roundedRect(40, sumTop, 250, 52, 4).fillAndStroke('#ecfdf5', '#10b981');
       doc
         .fillColor('#065f46')
-        .fontSize(10)
+        .fontSize(9.5)
         .font('Helvetica-Bold')
-        .text('PAYMENT VERIFIED', 60, subtotalTop + 14)
+        .text('PAYMENT VERIFIED (SSLCOMMERZ)', 52, sumTop + 10)
         .fontSize(8)
         .font('Helvetica')
-        .text(`Status: ${data.paymentStatus} | Method: SSLCommerz Gateway`, 60, subtotalTop + 30);
+        .text(`Status: ${data.paymentStatus.toUpperCase()}  |  Channel: SSLCommerz Payment Gateway`, 52, sumTop + 24)
+        .text(`Instant slot reserved and confirmed in live garage inventory`, 52, sumTop + 36);
 
-      // 6. Footer & Terms
-      const footerTop = 700;
-      doc.moveTo(50, footerTop).lineTo(545, footerTop).strokeColor('#e5e7eb').lineWidth(1).stroke();
+      // Right: Subtotal & Total
+      doc
+        .fillColor(textMuted)
+        .fontSize(9)
+        .font('Helvetica')
+        .text('Subtotal:', 320, sumTop + 8, { width: 110, align: 'right' })
+        .fillColor(textMain)
+        .font('Helvetica-Bold')
+        .text(`BDT ${Number(data.paidAmount || 0).toFixed(2)}`, 445, sumTop + 8, {
+          width: 100,
+          align: 'right',
+        });
 
       doc
-        .fillColor(grayColor)
-        .fontSize(8)
+        .fillColor(textMuted)
+        .fontSize(9)
         .font('Helvetica')
-        .text('Thank you for choosing Smart Parking System!', 50, footerTop + 10, {
+        .text('Gateway Processing:', 320, sumTop + 22, { width: 110, align: 'right' })
+        .fillColor('#059669')
+        .font('Helvetica-Bold')
+        .text('FREE', 445, sumTop + 22, { width: 100, align: 'right' });
+
+      doc.moveTo(350, sumTop + 36).lineTo(555, sumTop + 36).strokeColor(lineBorder).lineWidth(1).stroke();
+
+      doc
+        .fillColor(navyDark)
+        .fontSize(12)
+        .font('Helvetica-Bold')
+        .text('Total Paid:', 320, sumTop + 42, { width: 110, align: 'right' })
+        .fillColor(bluePrimary)
+        .text(`BDT ${Number(data.paidAmount || 0).toFixed(2)}`, 445, sumTop + 42, {
+          width: 100,
+          align: 'right',
+        });
+
+      // 6. Security Note & Footer
+      const footerTop = 720;
+      doc.moveTo(40, footerTop).lineTo(555, footerTop).strokeColor(lineBorder).lineWidth(1).stroke();
+
+      doc
+        .fillColor(textMuted)
+        .fontSize(7.5)
+        .font('Helvetica')
+        .text('Thank you for booking with ParkWise Smart Parking System!', 40, footerTop + 8, {
           align: 'center',
+          width: 515,
         })
         .text(
-          'This is a computer-generated invoice and does not require a physical signature.',
-          50,
-          footerTop + 22,
-          { align: 'center' },
+          'This is an electronically generated official receipt. For support, contact support@smartparking.com',
+          40,
+          footerTop + 19,
+          { align: 'center', width: 515 },
         )
         .text(
-          'Cancellation & Refund Policy: Cancellations are allowed up to 1 hour before scheduled start time.',
-          50,
-          footerTop + 34,
-          { align: 'center' },
+          'Cancellation Policy: Booking cancellations and refunds are permitted up to 1 hour prior to scheduled entry time.',
+          40,
+          footerTop + 30,
+          { align: 'center', width: 515 },
         );
 
       doc.end();

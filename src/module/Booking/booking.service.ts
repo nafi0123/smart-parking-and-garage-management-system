@@ -9,7 +9,7 @@ import type {
 } from './booking.interface';
 
 const createBooking = async (userId: string, payload: ICreateBooking) => {
-  // Check if garage exists
+  // 1. Check if garage exists & has available slots
   const garage = await prisma.garage.findUnique({
     where: { id: payload.garageId },
   });
@@ -20,7 +20,7 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
 
   // Check if available slots are > 0
   if (garage.availableSlots <= 0) {
-    throw new AppError(400, 'No available parking slots in this garage!');
+    throw new AppError(400, 'No available parking slots in this garage! Booking is not allowed when slots are 0.');
   }
 
   const start = new Date(payload.startTime);
@@ -49,8 +49,17 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
 
   const transactionId = `TRX-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  // Create booking & payment record. Available slots will decrement only AFTER payment confirmation!
+  // Create booking & payment record inside transaction with concurrency safety
   const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    // Re-verify garage slots within transaction to prevent race conditions
+    const freshGarage = await tx.garage.findUnique({
+      where: { id: payload.garageId },
+    });
+
+    if (!freshGarage || freshGarage.availableSlots <= 0) {
+      throw new AppError(400, 'No available parking slots in this garage! Booking is not allowed when slots are 0.');
+    }
+
     const booking = await tx.booking.create({
       data: {
         userId,
@@ -119,9 +128,27 @@ const createBooking = async (userId: string, payload: ICreateBooking) => {
   };
 };
 
-const getMyBookings = async (userId: string) => {
+const getMyBookings = async (userId: string, email?: string) => {
+  // Resolve user account by ID or email
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: userId },
+        ...(email ? [{ email }] : []),
+      ],
+    },
+  });
+
+  const targetId = user?.id || userId;
+  const targetEmail = user?.email || email;
+
   const bookings = await prisma.booking.findMany({
-    where: { userId },
+    where: {
+      OR: [
+        { userId: targetId },
+        ...(targetEmail ? [{ user: { email: targetEmail } }] : []),
+      ],
+    },
     orderBy: { createdAt: 'desc' },
     include: {
       payment: true,
@@ -142,17 +169,43 @@ const getMyBookings = async (userId: string) => {
           },
         },
       },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          picture: true,
+        },
+      },
+      review: true,
     },
   });
 
   return bookings;
 };
 
-const getManagerBookings = async (managerId: string) => {
+const getManagerBookings = async (managerId: string, email?: string) => {
+  // Resolve manager account by ID or email to guarantee strict scoping
+  const manager = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: managerId },
+        ...(email ? [{ email }] : []),
+      ],
+    },
+  });
+
+  const targetId = manager?.id || managerId;
+  const targetEmail = manager?.email || email;
+
   const bookings = await prisma.booking.findMany({
     where: {
       garage: {
-        ownerId: managerId,
+        OR: [
+          { ownerId: targetId },
+          ...(targetEmail ? [{ owner: { email: targetEmail } }] : []),
+        ],
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -163,6 +216,16 @@ const getManagerBookings = async (managerId: string) => {
           id: true,
           name: true,
           address: true,
+          location: true,
+          pricePerHour: true,
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+            },
+          },
         },
       },
       user: {
@@ -171,8 +234,10 @@ const getManagerBookings = async (managerId: string) => {
           name: true,
           email: true,
           phone: true,
+          picture: true,
         },
       },
+      review: true,
     },
   });
 
@@ -356,9 +421,14 @@ const updateBookingStatus = async (
 
     // If changing to CONFIRMED from PENDING, decrement available slot
     if (oldStatus === BookingStatus.PENDING && newStatus === BookingStatus.CONFIRMED) {
-      if (booking.garage.availableSlots <= 0) {
+      const freshGarage = await tx.garage.findUnique({
+        where: { id: booking.garageId },
+      });
+
+      if (!freshGarage || freshGarage.availableSlots <= 0) {
         throw new AppError(400, 'No available parking slots remaining in this garage!');
       }
+
       await tx.garage.update({
         where: { id: booking.garageId },
         data: {
@@ -392,12 +462,21 @@ const updateBookingStatus = async (
 
 import { generateInvoicePDF } from '../../app/utils/pdfGenerator';
 
-const generateBookingInvoice = async (bookingId: string, userId: string, userRole: string) => {
+const generateBookingInvoice = async (
+  bookingId: string,
+  userId: string,
+  userRole: string,
+  userEmail?: string,
+) => {
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
     include: {
       user: true,
-      garage: true,
+      garage: {
+        include: {
+          owner: true,
+        },
+      },
       payment: true,
     },
   });
@@ -406,8 +485,15 @@ const generateBookingInvoice = async (bookingId: string, userId: string, userRol
     throw new AppError(404, 'Booking not found!');
   }
 
-  // Authorization check: only the booking owner, garage owner, or admin can access invoice
-  if (booking.userId !== userId && booking.garage.ownerId !== userId && userRole !== 'ADMIN') {
+  // Authorization check: booking customer, garage owner, or admin
+  const isCustomer =
+    booking.userId === userId || (userEmail && booking.user.email === userEmail);
+  const isGarageOwner =
+    booking.garage.ownerId === userId ||
+    (userEmail && booking.garage.owner?.email === userEmail);
+  const isAdmin = userRole === 'ADMIN';
+
+  if (!isCustomer && !isGarageOwner && !isAdmin) {
     throw new AppError(403, 'You are not authorized to access this invoice!');
   }
 

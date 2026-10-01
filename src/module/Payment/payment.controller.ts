@@ -152,8 +152,8 @@ const renderHtmlStatusPage = (
       </div>
     </div>
 
-    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/my-bookings" class="action-btn">
-      ${isSuccess ? 'View My Bookings' : 'Return to Dashboard'}
+    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" class="action-btn">
+      ${isSuccess ? 'Go to Dashboard' : 'Return to Dashboard'}
     </a>
 
     <p class="footer-note">Smart Parking & Garage Management System</p>

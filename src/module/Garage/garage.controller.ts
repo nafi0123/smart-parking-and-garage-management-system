@@ -51,8 +51,8 @@ const getAllGarages = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getMyGarages = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req as any).user.userId;
-  const result = await GarageService.getMyGarages(userId);
+  const { userId, email } = (req as any).user;
+  const result = await GarageService.getMyGarages(userId, email);
 
   sendResponse(res, {
     statusCode: 200,

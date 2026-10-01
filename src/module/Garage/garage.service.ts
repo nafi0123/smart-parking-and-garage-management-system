@@ -236,9 +236,26 @@ const getNearbyGarages = async (query: INearbyGarageQuery) => {
   };
 };
 
-const getMyGarages = async (ownerId: string) => {
+const getMyGarages = async (ownerId: string, email?: string) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { id: ownerId },
+        ...(email ? [{ email }] : []),
+      ],
+    },
+  });
+
+  const targetId = user?.id || ownerId;
+  const targetEmail = user?.email || email;
+
   const garages = await prisma.garage.findMany({
-    where: { ownerId },
+    where: {
+      OR: [
+        { ownerId: targetId },
+        ...(targetEmail ? [{ owner: { email: targetEmail } }] : []),
+      ],
+    },
     orderBy: { createdAt: 'desc' },
     include: {
       owner: {
