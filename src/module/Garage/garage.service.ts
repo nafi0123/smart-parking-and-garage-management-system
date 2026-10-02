@@ -356,6 +356,11 @@ const deleteGarage = async (garageId: string, userId: string, userRole: string) 
     throw new AppError(403, 'You are not authorized to delete this garage!');
   }
 
+  // Ensure favorites are deleted
+  await prisma.favoriteGarage.deleteMany({
+    where: { garageId },
+  });
+
   await prisma.garage.delete({
     where: { id: garageId },
   });

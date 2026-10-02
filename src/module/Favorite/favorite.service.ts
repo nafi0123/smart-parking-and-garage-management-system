@@ -65,11 +65,13 @@ const getMyFavorites = async (userId: string) => {
     },
   });
 
-  return favorites.map((fav) => ({
-    favoriteId: fav.id,
-    favoritedAt: fav.createdAt,
-    ...fav.garage,
-  }));
+  return favorites
+    .filter((fav) => fav.garage != null)
+    .map((fav) => ({
+      favoriteId: fav.id,
+      favoritedAt: fav.createdAt,
+      ...fav.garage,
+    }));
 };
 
 const checkIsFavorite = async (userId: string, garageId: string) => {
