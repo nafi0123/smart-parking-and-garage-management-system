@@ -1,4 +1,6 @@
 import PDFDocument from 'pdfkit';
+import 'pdfkit/standard-fonts/Helvetica';
+import 'pdfkit/standard-fonts/HelveticaBold';
 
 interface IInvoiceData {
   bookingId: string;
