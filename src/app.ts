@@ -20,15 +20,34 @@ const app: Application = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+const allowedOrigins = [
+  'https://smrat-parking-frontend.vercel.app',
+  'https://smrat-parking-frontend-c0ts8jmxf-nafi-mahmud-bukharis-projects.vercel.app',
+  'https://smart-parking-frontend.vercel.app',
+  'https://smart-parking-backend-omega.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5000',
+  process.env.FRONTEND_URL || '',
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      'https://smart-parking-backend-omega.vercel.app',
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5000',
-      process.env.FRONTEND_URL || '',
-    ].filter(Boolean),
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost') ||
+        origin.includes('127.0.0.1')
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(null, true);
+    },
     credentials: true,
   }),
 );
@@ -45,14 +64,34 @@ app.use('/api/v1/favorites', FavoriteRoutes);
 app.use('/api/v1/analytics', AnalyticsRoutes);
 
 // Test Google Login page (handles both GET page load and POST redirect from Google)
-app.all('/test-google', (req: Request, res: Response) => {
+app.all('/test-google', async (req: Request, res: Response) => {
+  const credential =
+    (req.body?.credential as string | undefined) ||
+    (req.query?.credential as string | undefined) ||
+    '';
+
+  const FRONTEND_URL = process.env.FRONTEND_URL || 'https://smrat-parking-frontend.vercel.app';
+
+  // If credential received via POST (from Google redirect), auto-login and redirect to frontend
+  if (credential && req.method === 'POST') {
+    try {
+      const { AuthService } = await import('./module/Auth/auth.service');
+      const result = await AuthService.googleLogin({ idToken: credential });
+
+      const redirectUrl = new URL(`${FRONTEND_URL}/login`);
+      redirectUrl.searchParams.set('accessToken', result.accessToken);
+      redirectUrl.searchParams.set('user', JSON.stringify(result.user));
+      return res.redirect(redirectUrl.toString());
+    } catch (err: any) {
+      const msg = err?.message || 'Google login failed';
+      return res.redirect(`${FRONTEND_URL}/login?error=${encodeURIComponent(msg)}`);
+    }
+  }
+
+  // GET request: serve the test page HTML
   const filePath = path.join(process.cwd(), 'test-google-login.html');
   try {
     let html = fs.readFileSync(filePath, 'utf-8');
-    const credential =
-      (req.body?.credential as string | undefined) ||
-      (req.query?.credential as string | undefined) ||
-      '';
     if (credential) {
       html = html.replace(
         '/* __SERVER_TOKEN_PLACEHOLDER__ */',

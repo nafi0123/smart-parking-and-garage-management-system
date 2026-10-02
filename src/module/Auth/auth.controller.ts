@@ -3,6 +3,8 @@ import catchAsync from '../../app/utils/catchAsync';
 import sendResponse from '../../app/utils/sendResponse';
 import { AuthService } from './auth.service';
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://smrat-parking-frontend.vercel.app';
+
 const login = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.login(req.body);
 
@@ -95,9 +97,33 @@ const logout = catchAsync(async (_req: Request, res: Response) => {
   });
 });
 
+// Handles Google redirect flow: POST from Google with credential in form body
+const googleRedirect = async (req: Request, res: Response) => {
+  try {
+    const credential = req.body?.credential as string | undefined;
+
+    if (!credential) {
+      return res.redirect(`${FRONTEND_URL}/login?error=no_credential`);
+    }
+
+    const result = await AuthService.googleLogin({ idToken: credential });
+
+    // Redirect to frontend with token and user info in URL
+    const redirectUrl = new URL(`${FRONTEND_URL}/login`);
+    redirectUrl.searchParams.set('accessToken', result.accessToken);
+    redirectUrl.searchParams.set('user', JSON.stringify(result.user));
+
+    return res.redirect(redirectUrl.toString());
+  } catch (err: any) {
+    const msg = err?.message || 'Google login failed';
+    return res.redirect(`${FRONTEND_URL}/login?error=${encodeURIComponent(msg)}`);
+  }
+};
+
 export const AuthController = {
   login,
   googleLogin,
+  googleRedirect,
   verifyOtp,
   logout,
 };
