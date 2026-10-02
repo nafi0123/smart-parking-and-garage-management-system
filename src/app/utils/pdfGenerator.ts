@@ -280,7 +280,7 @@ export const generateInvoicePDF = (data: IInvoiceData): Promise<Buffer> => {
           { align: 'center', width: 515 },
         )
         .text(
-          'Cancellation Policy: Booking cancellations and refunds are permitted up to 1 hour prior to scheduled entry time.',
+          'Cancellation Policy: Booking cancellations and instant refunds are permitted anytime prior to session completion.',
           40,
           footerTop + 30,
           { align: 'center', width: 515 },

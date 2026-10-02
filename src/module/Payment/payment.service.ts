@@ -296,18 +296,6 @@ const refundBookingPayment = async (
     throw new AppError(400, 'No completed payment found for this booking to refund!');
   }
 
-  // Strictly enforce cancellation at least 1 hour (60 mins) before booking startTime
-  const currentTime = new Date();
-  const startTime = new Date(booking.startTime);
-  const diffInMinutes = (startTime.getTime() - currentTime.getTime()) / (1000 * 60);
-
-  if (diffInMinutes < 60) {
-    throw new AppError(
-      400,
-      'Cancellation and refund is only allowed at least 1 hour before the booking start time!',
-    );
-  }
-
   // Get bank_tran_id for SSLCommerz refund
   const paymentGatewayData = booking.payment.paymentGatewayData as any;
   const bank_tran_id = paymentGatewayData?.bank_tran_id || booking.payment.transactionId;
@@ -318,7 +306,7 @@ const refundBookingPayment = async (
     refundGatewayResult = await SSLCommerzService.initiateRefund({
       bank_tran_id,
       refund_amount: booking.totalPrice,
-      refund_remarks: reason || 'Customer cancelled at least 1 hour before start time',
+      refund_remarks: reason || 'Customer requested booking cancellation and refund',
       re_fe_id,
     });
   } catch (error: any) {
